@@ -26,7 +26,10 @@ jobs:
         id: get_bump
         run: |
           BUMP=$(standard-version --dry-run | grep "bump:" | sed -E 's/.*bump: ([a-z]+).*/\1/')
-          echo "Determined bump: $BUMP"
+          if [ -z "$BUMP" ]; then
+            echo "⚠️  No bump detected, using patch as default"
+            BUMP="patch"
+          fi
           echo "bump=$BUMP" >> $GITHUB_OUTPUT
 
       - name: Create new tag (bump patch)
