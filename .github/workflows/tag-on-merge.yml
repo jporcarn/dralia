@@ -1,0 +1,40 @@
+name: Auto Tag Main Branch
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    name: Determine version bump and create tag
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js (for standard-version)
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install standard-version
+        run: npm install --global standard-version
+
+      - name: Get recommended bump using standard-version
+        id: get_bump
+        run: |
+          BUMP=$(standard-version --dry-run | grep "bump:" | sed -E 's/.*bump: ([a-z]+).*/\1/')
+          echo "Determined bump: $BUMP"
+          echo "bump=$BUMP" >> $GITHUB_OUTPUT
+
+      - name: Create new tag (bump patch)
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          default_bump: ${{ steps.get_bump.outputs.bump }}
+          tag_prefix: v
+
+      - name: Output new tag
+        run: echo "Created tag ${{ steps.tag_version.outputs.new_tag }}"

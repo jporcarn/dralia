@@ -16,7 +16,7 @@ namespace Docplanner.Api.Controllers
 
         [HttpGet(Name = "GetWeeklySlots")]
         [ProducesResponseType(typeof(WeeklySlotsResponse), StatusCodes.Status200OK)]
-        public async Task<ActionResult<WeeklySlotsResponse>> GetWeeklySlots([FromQuery] int week)
+        public async Task<ActionResult<WeeklySlotsResponse>> GetWeeklySlots([FromQuery] int year, [FromQuery] int week)
         {
             this._logger.LogInformation("GetWeeklySlots called with week: {week}", week);
 
