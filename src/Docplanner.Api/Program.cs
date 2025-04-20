@@ -1,6 +1,13 @@
+using AutoMapper;
+using Docplanner.Api.Handlers;
 using Docplanner.Api.Middlewares;
+using Docplanner.Application.Interfaces.Repositories;
+using Docplanner.Infrastructure.SlotService.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Access Configuration
+var configuration = builder.Configuration;
 
 // Add services to the container.
 
@@ -17,6 +24,23 @@ builder.Services.AddResponseCompression(options =>
 
 // Register custom error handling middleware
 builder.Services.AddTransient<ErrorHandlingMiddleware>();
+
+// Register AutoMapper
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+
+string baseUrlString = configuration.GetValue<string>("AvailabilityApi:BaseUrl") ?? "http://localhost/api";
+
+builder.Services.AddHttpClient<IAvailabilityRepository, AvailabilityApiRepository>(client =>
+{
+    client.BaseAddress = new Uri(baseUrlString);
+})
+    .AddHttpMessageHandler(() =>
+    {
+        var config = builder.Configuration.GetSection("AvailabilityApi:Credentials");
+        return new BasicAuthHandler(config["Username"] ?? string.Empty, config["Password"] ?? string.Empty);
+    });
+
 
 var app = builder.Build();
 

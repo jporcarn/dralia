@@ -26,7 +26,12 @@ namespace Docplanner.ApiTests.Integration.Controllers
             var response = await client.GetAsync(slotUrl);
 
             // Assert
+            Assert.NotNull(response);
             response.EnsureSuccessStatusCode();
+
+            Assert.NotNull(response.Content);
+            Assert.NotNull(response.Content.Headers);
+            Assert.NotNull(response.Content.Headers.ContentType);
 
             Assert.Equal("application/json; charset=utf-8",
                 response.Content.Headers.ContentType.ToString());
