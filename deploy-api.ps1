@@ -1,6 +1,11 @@
 # ─────────────────────────────────────────────
 # Configuration – Update to match your setup
 # ─────────────────────────────────────────────
+param (
+    [string]$Username,
+    [SecureString]$Password
+)
+
 
 $solutionPath = "./src/Docplanner.Api.sln"
 $projectPath = "./src/Docplanner.Api/Docplanner.Api.csproj"
@@ -9,8 +14,10 @@ $resourceGroup = "docplanner-dev-rg"
 $appServiceName = "dralia-api-app"
 $subscriptionName = "Pay as you go"
 
-# Resolve the absolute path for the publish directory
-$publishAbsoluteDir = (Resolve-Path $publishDir).Path
+# Convert SecureString to Plain Text for Azure CLI
+$PlainPassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto(
+    [Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password)
+)
 
 # ─────────────────────────────────────────────
 # Build the solution
@@ -103,3 +110,20 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "✅ Deployment completed successfully!"
+
+# ─────────────────────────────────────────────
+# Set Environment Variables for Azure App Service
+# ─────────────────────────────────────────────
+
+Write-Host "🔧 Setting environment variables for Azure App Service..."
+
+az webapp config appsettings set --resource-group $resourceGroup --name $appServiceName --settings `
+    "AVAILABILITYAPI__CREDENTIALS__USERNAME=$Username" `
+    "AVAILABILITYAPI__CREDENTIALS__PASSWORD=$PlainPassword"
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "❌ Failed to set environment variables. Aborting."
+    exit 1
+}
+
+Write-Host "✅ Environment variables set successfully!"
