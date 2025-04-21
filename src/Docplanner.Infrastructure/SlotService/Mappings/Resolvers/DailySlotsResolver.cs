@@ -10,7 +10,12 @@ namespace Docplanner.Infrastructure.SlotService.Mappings.Resolvers
         {
             List<DailySlots> dailySlotsList = new();
 
-            var mondayDate = context?.Items?["mondayDateOnly"] as DateOnly?;
+            if (context == null)
+            {
+                throw new InvalidOperationException("Data Processing Error.", new ArgumentNullException(nameof(context), "Context cannot be null."));
+            }
+
+            var mondayDate = context.Items?["mondayDateOnly"] as DateOnly?;
 
             if (mondayDate == null)
             {
