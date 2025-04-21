@@ -2,6 +2,7 @@ using AutoMapper;
 using Docplanner.Api.Handlers;
 using Docplanner.Api.Middlewares;
 using Docplanner.Application.Interfaces.Repositories;
+using Docplanner.Application.UseCases.Availability;
 using Docplanner.Infrastructure.SlotService.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -47,6 +48,10 @@ builder.Services.AddHttpClient<IAvailabilityRepository, AvailabilityApiRepositor
         return new BasicAuthHandler(config["Username"] ?? string.Empty, config["Password"] ?? string.Empty);
     });
 
+
+// Use AddScoped to align their lifecycle with the HTTP request.
+// This ensures efficient resource usage and avoids potential lifecycle mismatches.
+builder.Services.AddScoped<IGetAvailableSlotsHandler, GetAvailableSlotsHandler>();
 
 var app = builder.Build();
 
