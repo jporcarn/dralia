@@ -3,6 +3,7 @@ using Docplanner.Api.Handlers;
 using Docplanner.Api.Models;
 using Docplanner.Application.Interfaces.Repositories;
 using Docplanner.Infrastructure.SlotService.Mappings.Profiles;
+using Docplanner.Infrastructure.SlotService.Repositories;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
@@ -10,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using Xunit;
 
-namespace Docplanner.Infrastructure.SlotService.Repositories.Tests
+namespace Docplanner.ApiTests.Integration.SlotService.Repositories
 {
     public class AvailabilityApiRepositoryTests : IClassFixture<WebApplicationFactory<Program>>
     {
@@ -100,7 +101,6 @@ namespace Docplanner.Infrastructure.SlotService.Repositories.Tests
             Assert.Contains((int)response.StatusCode, new[] { 200, 201, 202, 204 }); // Assert successful status codes
 
             result.Should().NotBeNull();
-
         }
 
         [Fact()]
@@ -141,9 +141,6 @@ namespace Docplanner.Infrastructure.SlotService.Repositories.Tests
 
             busyDays.Should().NotBeNullOrEmpty();
             busyDays.Should().HaveCount(2);
-
         }
-
-
     }
 }

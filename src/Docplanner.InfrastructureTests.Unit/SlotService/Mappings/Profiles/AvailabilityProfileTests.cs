@@ -1,7 +1,8 @@
 ﻿using AutoMapper;
+using Docplanner.Infrastructure.SlotService.Mappings.Profiles;
 using Xunit;
 
-namespace Docplanner.Infrastructure.SlotService.Mappings.Profiles.Tests
+namespace Docplanner.InfrastructureTests.Unit.SlotService.Mappings.Profiles
 {
     public class AvailabilityProfileTests
     {

@@ -30,3 +30,6 @@ jobs:
 
       - name: Run Integration Tests
         run: dotnet test ./src/Docplanner.ApiTests.Integration/Docplanner.ApiTests.Integration.csproj --configuration Release --no-build --verbosity normal
+        env:
+          AVAILABILITYAPI__CREDENTIALS__PASSWORD: ${{ secrets.AVAILABILITYAPI__CREDENTIALS__PASSWORD }}
+          AVAILABILITYAPI__CREDENTIALS__USERNAME: ${{ secrets.AVAILABILITYAPI__CREDENTIALS__USERNAME }}

@@ -28,7 +28,6 @@ builder.Services.AddTransient<ErrorHandlingMiddleware>();
 // Register AutoMapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
-
 string baseUrlString = configuration.GetValue<string>("AvailabilityApi:BaseUrl") ?? "http://localhost/api";
 
 builder.Services.AddHttpClient<IAvailabilityRepository, AvailabilityApiRepository>(client =>
@@ -38,6 +37,13 @@ builder.Services.AddHttpClient<IAvailabilityRepository, AvailabilityApiRepositor
     .AddHttpMessageHandler(() =>
     {
         var config = builder.Configuration.GetSection("AvailabilityApi:Credentials");
+
+        string username = (Environment.GetEnvironmentVariable("AVAILABILITYAPI__CREDENTIALS__USERNAME")
+                          ?? config["Username"]) ?? string.Empty;
+
+        string password = (Environment.GetEnvironmentVariable("AVAILABILITYAPI__CREDENTIALS__PASSWORD")
+                          ?? config["Password"]) ?? string.Empty;
+
         return new BasicAuthHandler(config["Username"] ?? string.Empty, config["Password"] ?? string.Empty);
     });
 
