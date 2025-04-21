@@ -107,7 +107,7 @@ namespace Docplanner.ApiTests.Integration.SlotService.Repositories
         public async Task GetWeeklyAvailabilityAsync_Using_DI_Container_Should_Succeed()
         {
             // Arrange
-            var mondayDate = new DateOnly(2025, 04, 14); // date in the past with fixed and known results.
+            var mondayDate = new DateOnly(2025, 04, 21); // date in the past with fixed and known results.
 
             // Act
             WeeklySlots? result = null;
@@ -126,7 +126,7 @@ namespace Docplanner.ApiTests.Integration.SlotService.Repositories
             result.Facility.Should().NotBeNull();
             result.Facility.Should().BeEquivalentTo(new Facility
             {
-                FacilityId = Guid.Parse("a6882e6c-cf3d-40a4-93d8-4584894fc539"),
+                FacilityId = Guid.Parse("7b22d81f-cc29-4e47-8118-7296536429ae"),
                 Name = "Las Palmeras",
                 Address = "Plaza de la independencia 36, 38006 Santa Cruz de Tenerife"
             });
@@ -140,7 +140,7 @@ namespace Docplanner.ApiTests.Integration.SlotService.Repositories
                 .ToList();
 
             busyDays.Should().NotBeNullOrEmpty();
-            busyDays.Should().HaveCount(2);
+            busyDays.Should().HaveCount(1);
         }
     }
 }

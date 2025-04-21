@@ -25,11 +25,11 @@ jobs:
       - name: Build
         run: dotnet build ./src/Docplanner.Api.sln --no-restore --configuration Release
 
-      - name: Run Unit Tests
-        run: dotnet test ./src/Docplanner.ApiTests.Unit/Docplanner.ApiTests.Unit.csproj --configuration Release --no-build --verbosity normal
+      - name: Run All Unit Tests
+        run: dotnet test ./src/Docplanner.Api.sln --configuration Release --no-build --filter FullyQualifiedName~"*Tests.Unit" --verbosity normal
 
-      - name: Run Integration Tests
-        run: dotnet test ./src/Docplanner.ApiTests.Integration/Docplanner.ApiTests.Integration.csproj --configuration Release --no-build --verbosity normal
+      - name: Run All Integration Tests
+        run: dotnet test ./src/Docplanner.Api.sln --configuration Release --no-build --filter FullyQualifiedName~"*Tests.Integration" --verbosity normal
         env:
           AVAILABILITYAPI__CREDENTIALS__PASSWORD: ${{ secrets.AVAILABILITYAPI__CREDENTIALS__PASSWORD }}
           AVAILABILITYAPI__CREDENTIALS__USERNAME: ${{ secrets.AVAILABILITYAPI__CREDENTIALS__USERNAME }}
