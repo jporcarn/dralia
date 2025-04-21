@@ -6,9 +6,11 @@ permissions:
 name: Auto Tag Main Branch
 
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
 
 jobs:
   tag:
