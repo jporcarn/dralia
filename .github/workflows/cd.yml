@@ -55,7 +55,7 @@ jobs:
 
       # Publish the project
       - name: Publish
-        run: dotnet publish ./src/Docplanner.Api/Docplanner.Api.csproj --configuration Debug --output ./publish --verbose
+        run: dotnet publish ./src/Docplanner.Api/Docplanner.Api.csproj --configuration Debug --output ./publish
 
       # Deploy to Azure App Service
       - name: Deploy to Azure Web App
