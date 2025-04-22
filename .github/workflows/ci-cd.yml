@@ -1,0 +1,113 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  # CI Job: Build and Test
+  ci:
+    runs-on: ubuntu-latest
+    name: Build and Test
+
+    steps:
+      # Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all tags
+
+      # Setup .NET
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      # Restore dependencies
+      - name: Restore dependencies
+        run: dotnet restore ./src/Docplanner.Api.sln
+
+      # Build the project
+      - name: Build
+        run: dotnet build ./src/Docplanner.Api.sln --no-restore --configuration Release
+
+      # Run Unit Tests
+      - name: Run All Unit Tests
+        run: dotnet test ./src/Docplanner.Api.sln --configuration Release --no-build --filter FullyQualifiedName~"*Tests.Unit" --verbosity normal
+
+      # Run Integration Tests
+      - name: Run All Integration Tests
+        run: dotnet test ./src/Docplanner.Api.sln --configuration Release --no-build --filter FullyQualifiedName~"*Tests.Integration" --verbosity normal
+        env:
+          AVAILABILITYAPI__CREDENTIALS__PASSWORD: ${{ secrets.AVAILABILITYAPI__CREDENTIALS__PASSWORD }}
+          AVAILABILITYAPI__CREDENTIALS__USERNAME: ${{ secrets.AVAILABILITYAPI__CREDENTIALS__USERNAME }}
+
+  # Tagging Job: Create a new tag
+  tag:
+    runs-on: ubuntu-latest
+    name: Create Tag
+    needs: ci # This job depends on the CI job
+
+    steps:
+      # Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all tags
+
+      # Get recommended bump using standard-version
+      - name: Get recommended bump using standard-version
+        id: get_bump
+        run: |
+          npm install --global standard-version
+          BUMP=$(standard-version --dry-run | grep "bump:" | sed -E 's/.*bump: ([a-z]+).*/\1/')
+          if [ -z "$BUMP" ]; then
+            echo "⚠️  No bump detected, using patch as default"
+            BUMP="patch"
+          fi
+          echo "bump=$BUMP" >> $GITHUB_OUTPUT
+
+      # Create new tag
+      - name: Create new tag
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          default_bump: ${{ steps.get_bump.outputs.bump }}
+          tag_prefix: v
+
+      # Get the latest tag
+      - name: Get latest tag
+        id: get_latest_tag
+        run: |
+          LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
+          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+
+  # Deployment Job: Deploy to Azure
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to Azure
+    needs: tag # This job depends on the Tagging job
+
+    steps:
+      # Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all tags
+
+      # Checkout the latest tag
+      - name: Checkout latest tag
+        run: git checkout ${{ needs.tag.outputs.get_latest_tag.latest_tag }}
+
+      # Publish the project
+      - name: Publish
+        run: dotnet publish ./src/Docplanner.Api/Docplanner.Api.csproj --configuration Release --output ./publish
+
+      # Deploy to Azure App Service
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: dralia-api-app
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./publish
