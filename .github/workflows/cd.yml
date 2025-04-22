@@ -1,0 +1,66 @@
+name: CD
+
+on:
+  workflow_run:
+    workflows:
+      - Auto Tag Main Branch
+    types:
+      - completed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to Azure
+
+    steps:
+      # Checkout the latest tag
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all tags
+
+      - name: Get latest tag
+        id: get_latest_tag
+        run: |
+          LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
+          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+
+      - name: Checkout latest tag
+        run: git checkout ${{ steps.get_latest_tag.outputs.latest_tag }}
+
+      # Setup .NET
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      # Restore dependencies
+      - name: Restore dependencies
+        run: dotnet restore ./src/Docplanner.Api.sln
+
+      # Build the project
+      - name: Build
+        run: dotnet build ./src/Docplanner.Api.sln --no-restore --configuration Release
+
+      # Run Unit Tests
+      - name: Run All Unit Tests
+        run: dotnet test ./src/Docplanner.Api.sln --configuration Release --no-build --filter FullyQualifiedName~"*Tests.Unit" --verbosity normal
+
+      # Run Integration Tests
+      - name: Run All Integration Tests
+        run: dotnet test ./src/Docplanner.Api.sln --configuration Release --no-build --filter FullyQualifiedName~"*Tests.Integration" --verbosity normal
+        env:
+          AVAILABILITYAPI__CREDENTIALS__PASSWORD: ${{ secrets.AVAILABILITYAPI__CREDENTIALS__PASSWORD }}
+          AVAILABILITYAPI__CREDENTIALS__USERNAME: ${{ secrets.AVAILABILITYAPI__CREDENTIALS__USERNAME }}
+
+      # Publish the project
+      - name: Publish
+        run: dotnet publish ./src/Docplanner.Api/Docplanner.Api.csproj --configuration Debug --output ./publish --verbose
+
+      # Deploy to Azure App Service
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: dralia-api-app
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./publish
