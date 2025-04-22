@@ -1,4 +1,5 @@
 ﻿using Docplanner.Api.Models;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Docplanner.Application.Interfaces.Repositories
 {
