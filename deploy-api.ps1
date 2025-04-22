@@ -103,7 +103,7 @@ if ($LASTEXITCODE -ne 0) {
 # ─────────────────────────────────────────────
 
 Write-Host "🚀 Deploying to Azure App Service '$appServiceName' using ZIP file..."
-az webapp deploy --resource-group $resourceGroup --name $appServiceName --src-path $zipFilePath --type zip
+az webapp deploy --resource-group $resourceGroup --name $appServiceName --src-path $zipFilePath --type zip --verbose
 if ($LASTEXITCODE -ne 0) {
     Write-Error "❌ Deployment failed."
     exit 1
