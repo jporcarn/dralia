@@ -105,6 +105,10 @@ jobs:
       - name: Checkout latest tag
         run: git checkout ${{ needs.tag.outputs.get_latest_tag.latest_tag }}
 
+      # Install Terraform
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v2
+
       # Set Terraform environment variable for the latest tag
       - name: Set Terraform Environment Variable
         run: echo "TF_VAR_LATEST_TAG=${{ needs.tag.outputs.get_latest_tag.latest_tag }}" >> $GITHUB_ENV
