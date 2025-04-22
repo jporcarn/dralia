@@ -55,13 +55,12 @@ jobs:
 
       # Publish the project
       - name: Publish
-        run: dotnet publish ./src/Docplanner.Api/Docplanner.Api.csproj --configuration Debug --output ./publish
+        run: dotnet publish ./src/Docplanner.Api/Docplanner.Api.csproj --configuration Debug --output ./publish --verbose
 
       # Deploy to Azure App Service
-    #   - name: Deploy to Azure Web App
-    #     uses: azure/webapps-deploy@v2
-    #     with:
-    #       app-name: dralia-api-app
-    #       slot-name: production
-    #       publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-    #       package: ./publish
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: dralia-api-app
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./publish
