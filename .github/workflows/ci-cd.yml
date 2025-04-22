@@ -105,6 +105,22 @@ jobs:
       - name: Checkout latest tag
         run: git checkout ${{ needs.tag.outputs.get_latest_tag.latest_tag }}
 
+      # Set Terraform environment variable for the latest tag
+      - name: Set Terraform Environment Variable
+        run: echo "TF_VAR_LATEST_TAG=${{ needs.tag.outputs.get_latest_tag.latest_tag }}" >> $GITHUB_ENV
+
+      # Initialize Terraform
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ./infra
+
+      # Apply Terraform
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        working-directory: ./infra
+        env:
+          TF_VAR_LATEST_TAG: ${{ env.TF_VAR_LATEST_TAG }}
+
       # Publish the project
       - name: Publish
         run: dotnet publish ./src/Docplanner.Api/Docplanner.Api.csproj --configuration Release --output ./publish
