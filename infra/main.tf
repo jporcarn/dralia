@@ -1,7 +1,15 @@
+locals {
+  tags = {
+    author = "Josep Porcar Nadal"
+    email  = "jjppnn@hotmail.com"
+  }
+}
 
 resource "azurerm_resource_group" "main" {
   name     = var.resource_group_name
   location = var.location
+
+  tags = local.tags
 }
 
 # web app
@@ -12,6 +20,8 @@ resource "azurerm_service_plan" "main" {
 
   os_type  = "Linux"
   sku_name = "B1"
+
+  tags = local.tags
 }
 
 resource "azurerm_linux_web_app" "main" {
@@ -32,5 +42,6 @@ resource "azurerm_linux_web_app" "main" {
   }
 
   https_only = true
-}
 
+  tags = merge(local.tags, { version = var.latest_tag }) # Combine fixed and dynamic tags set from TF_VAR_LATEST_TAG
+}

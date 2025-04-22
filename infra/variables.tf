@@ -17,3 +17,9 @@ variable "environment" {
   type    = string
   default = "Development"
 }
+
+variable "latest_tag" {
+  description = "The tag being deployed, set via TF_VAR_LATEST_TAG"
+  type        = string
+  default     = "unknown" # Default value if TF_VAR_LATEST_TAG is not set
+}
