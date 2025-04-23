@@ -22,3 +22,11 @@ output "web_app_https_only" {
   description = "Indicates if HTTPS is enabled for the web app"
   value       = azurerm_linux_web_app.main.https_only
 }
+
+output "service_version" {
+  value = var.service_version
+}
+
+output "credentials_username" {
+  value = var.credentials_username
+}

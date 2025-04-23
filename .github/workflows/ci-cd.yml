@@ -86,7 +86,7 @@ jobs:
         id: get_latest_tag
         run: |
           LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
-          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "service_version=$LATEST_TAG" >> $GITHUB_OUTPUT
 
   # Deployment Job: Deploy to Azure
   deploy:
@@ -103,15 +103,18 @@ jobs:
 
       # Checkout the latest tag
       - name: Checkout latest tag
-        run: git checkout ${{ needs.tag.outputs.get_latest_tag.latest_tag }}
+        run: git checkout ${{ needs.tag.outputs.get_latest_tag.service_version }}
 
       # Install Terraform
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v2
 
-      # Set Terraform environment variable for the latest tag
+      # Set Terraform environment variables
       - name: Set Terraform Environment Variable
-        run: echo "TF_VAR_LATEST_TAG=${{ needs.tag.outputs.get_latest_tag.latest_tag }}" >> $GITHUB_ENV
+        run: |
+          echo "TF_VAR_service_version=${{ needs.tag.outputs.get_latest_tag.service_version }}" >> $GITHUB_ENV
+          echo "TF_VAR_credentials_username=${{ secrets.AVAILABILITYAPI__CREDENTIALS__USERNAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_credentials_password=${{ secrets.AVAILABILITYAPI__CREDENTIALS__PASSWORD }}" >> $GITHUB_ENV
 
       # Export Azure authentication environment variables
       - name: Set Azure Environment Variables
@@ -126,17 +129,29 @@ jobs:
           echo "ARM_TENANT_ID=${{ secrets.ARM_TENANT_ID }}" >> $GITHUB_ENV
           echo "ARM_SUBSCRIPTION_ID=${{ secrets.ARM_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
 
+      # Debugging step to check if the environment variables are set correctly
+      - name: Debug Terraform Environment Variables before Terraform Init
+        run: |
+          echo "TF_VAR_service_version=$TF_VAR_service_version"
+          echo "TF_VAR_credentials_username=$TF_VAR_credentials_username"
+          echo "TF_VAR_credentials_password=$TF_VAR_credentials_password"
+
       # Initialize Terraform
       - name: Terraform Init
         run: terraform init
         working-directory: ./infra
 
+        # Debugging step to check if the environment variables are set correctly
+      - name: Debug Terraform Environment Variables before Terraform Apply
+        run: |
+          echo "TF_VAR_service_version=$TF_VAR_service_version"
+          echo "TF_VAR_credentials_username=$TF_VAR_credentials_username"
+          echo "TF_VAR_credentials_password=$TF_VAR_credentials_password"
+
       # Apply Terraform
       - name: Terraform Apply
         run: terraform apply -auto-approve
         working-directory: ./infra
-        env:
-          TF_VAR_LATEST_TAG: ${{ env.TF_VAR_LATEST_TAG }}
 
       # Publish the project
       - name: Publish

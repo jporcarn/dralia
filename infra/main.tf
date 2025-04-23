@@ -37,11 +37,14 @@ resource "azurerm_linux_web_app" "main" {
   }
 
   app_settings = {
-    "WEBSITES_PORT"          = "8080"
-    "ASPNETCORE_ENVIRONMENT" = var.environment # Development or Production"
+    "WEBSITES_PORT"                          = "8080"
+    "ASPNETCORE_ENVIRONMENT"                 = var.environment          # Development or Production"
+    "AVAILABILITYAPI__CREDENTIALS__USERNAME" = var.credentials_username # Set the username from the credentials map
+    "AVAILABILITYAPI__CREDENTIALS__PASSWORD" = var.credentials_password # Set the password from the credentials map
+    "SERVICE_VERSION"                        = var.service_version      # Set the service version from the latest tag
   }
 
   https_only = true
 
-  tags = merge(local.tags, { version = var.latest_tag }) # Combine fixed and dynamic tags set from TF_VAR_LATEST_TAG
+  tags = merge(local.tags, { version = var.service_version }) # Combine fixed and dynamic tags set from TF_VAR_service_version
 }

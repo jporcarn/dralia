@@ -18,8 +18,17 @@ variable "environment" {
   default = "Development"
 }
 
-variable "latest_tag" {
-  description = "The tag being deployed, set via TF_VAR_LATEST_TAG"
+variable "service_version" {
+  description = "The tag being deployed, set via TF_VAR_service_version"
   type        = string
-  default     = "unknown" # Default value if TF_VAR_LATEST_TAG is not set
+  # default     = "unknown" # Default value if TF_VAR_service_version is not set
+}
+variable "credentials_username" {
+  description = "The username for the Availability API, set via TF_VAR_credentials_username"
+  type        = string
+}
+
+variable "credentials_password" {
+  description = "The password for the Availability API, set via TF_VAR_credentials_password"
+  type        = string
 }
