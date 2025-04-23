@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using Docplanner.Api.Models;
+using Docplanner.Domain.Models;
 using Docplanner.Infrastructure.SlotService.Models;
 
 namespace Docplanner.Infrastructure.SlotService.Mappings.Resolvers
@@ -58,12 +58,12 @@ namespace Docplanner.Infrastructure.SlotService.Mappings.Resolvers
             var busySlots = dailyAvailabilityDto.BusySlots ?? new List<BusySlotDto>();
 
             // Define the start and end times of the work period
-            var startTime = new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.StartHour, 0, 0);
-            var endTime = new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.EndHour, 0, 0);
+            var startTime = new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.StartHour, 0, 0).ToUniversalTime();
+            var endTime = new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.EndHour, 0, 0).ToUniversalTime();
 
             // Exclude lunch break
-            var lunchStartTime = new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.LunchStartHour, 0, 0);
-            var lunchEndTime = new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.LunchEndHour, 0, 0);
+            var lunchStartTime = new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.LunchStartHour, 0, 0).ToUniversalTime();
+            var lunchEndTime = new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.LunchEndHour, 0, 0).ToUniversalTime();
 
             var slots = new List<Slot>();
             var slotDuration = TimeSpan.FromMinutes(slotDurationMinutes);

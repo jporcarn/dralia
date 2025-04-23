@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using Docplanner.Api.Handlers;
-using Docplanner.Api.Models;
 using Docplanner.Application.Interfaces.Repositories;
+using Docplanner.Domain.Models;
 using Docplanner.Infrastructure.SlotService.Mappings.Profiles;
 using Docplanner.Infrastructure.SlotService.Repositories;
 using FluentAssertions;
@@ -124,11 +124,15 @@ namespace Docplanner.ApiTests.Integration.SlotService.Repositories
             Assert.NotNull(result);
 
             result.Facility.Should().NotBeNull();
-            result.Facility.Should().BeEquivalentTo(new Facility
+            result.Facility.Should().BeEquivalentTo(new
             {
-                FacilityId = Guid.Parse("7b22d81f-cc29-4e47-8118-7296536429ae"),
+                // FacilityId = Guid.Parse("7b22d81f-cc29-4e47-8118-7296536429ae"), // This value changes in the API
                 Name = "Las Palmeras",
                 Address = "Plaza de la independencia 36, 38006 Santa Cruz de Tenerife"
+            }, (opt) =>
+            {
+                opt.ExcludingMissingMembers();
+                return opt;
             });
 
             result.SlotDurationMinutes.Should().Be(10);

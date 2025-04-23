@@ -1,9 +1,8 @@
 ﻿using AutoMapper;
-using Docplanner.Api.Models;
 using Docplanner.Application.Interfaces.Repositories;
+using Docplanner.Domain.Models;
 using Docplanner.Infrastructure.SlotService.Models;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using System.Collections.ObjectModel;
 using System.Net.Http.Json;
 
 namespace Docplanner.Infrastructure.SlotService.Repositories
@@ -66,7 +65,10 @@ namespace Docplanner.Infrastructure.SlotService.Repositories
 
         public async Task<WeeklySlots> GetWeeklyAvailabilityAsync(DateOnly mondayDate)
         {
-            // Operation Path: "GetWeeklyAvailability/{yyyyMMdd}"
+            // Operation path: "GetWeeklyAvailability/{yyyyMMdd}"
+
+            // Define the API endpoint
+            var endpoint = "/GetWeeklyAvailability";
 
             var mondayQueryParam = mondayDate.ToString("yyyyMMdd");
 
@@ -74,12 +76,10 @@ namespace Docplanner.Infrastructure.SlotService.Repositories
             if (!string.IsNullOrEmpty(_httpClient.BaseAddress?.ToString()))
                 urlBuilder.Append(_httpClient.BaseAddress.ToString());
 
-            urlBuilder.Append("/GetWeeklyAvailability");
+            urlBuilder.Append(endpoint);
             urlBuilder.Append($"/{System.Uri.EscapeDataString(mondayQueryParam)}");
 
             string operationUrl = urlBuilder.ToString();
-
-            // var json = await _httpClient.GetStringAsync(operationUrl);
 
             var response = await _httpClient.GetFromJsonAsync<WeeklyAvailabilityDto>(operationUrl);
 
@@ -90,5 +90,36 @@ namespace Docplanner.Infrastructure.SlotService.Repositories
 
             return domainModel;
         }
+
+        public async Task TakeSlotAsync(TakeSlotDto takeSlotDto)
+        {
+            // Operation path: "TakeSlot"
+
+            // Define the API endpoint
+            var endpoint = "/TakeSlot";
+
+            // Build the full URL
+            var urlBuilder = new System.Text.StringBuilder();
+            if (!string.IsNullOrEmpty(_httpClient.BaseAddress?.ToString()))
+                urlBuilder.Append(_httpClient.BaseAddress.ToString());
+
+            urlBuilder.Append(endpoint);
+
+            string operationUrl = urlBuilder.ToString();
+
+            // Make the POST request
+            var response = await _httpClient.PostAsJsonAsync(operationUrl, takeSlotDto);
+
+            // Handle the response
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                throw new HttpRequestException(
+                    $"Failed to take slot. Status Code: {response.StatusCode}, Response: {errorContent}",
+                    null,
+                    response.StatusCode);
+            }
+        }
+
     }
 }
