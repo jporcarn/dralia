@@ -3,6 +3,7 @@ using Docplanner.Application.Interfaces.Repositories;
 using Docplanner.Domain.Models;
 using Docplanner.Infrastructure.SlotService.Models;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Logging;
 using System.Net.Http.Json;
 
 namespace Docplanner.Infrastructure.SlotService.Repositories
@@ -10,11 +11,16 @@ namespace Docplanner.Infrastructure.SlotService.Repositories
     public class AvailabilityApiRepository : IAvailabilityRepository, IHealthCheck
     {
         private readonly HttpClient _httpClient;
+        private readonly ILogger<AvailabilityApiRepository> _logger;
         private readonly IMapper _mapper;
 
-        public AvailabilityApiRepository(HttpClient httpClient, IMapper mapper)
+        public AvailabilityApiRepository(
+            HttpClient httpClient,
+            ILogger<AvailabilityApiRepository> logger,
+            IMapper mapper)
         {
             this._httpClient = httpClient;
+            this._logger = logger;
             this._mapper = mapper;
         }
 
@@ -108,7 +114,20 @@ namespace Docplanner.Infrastructure.SlotService.Repositories
             string operationUrl = urlBuilder.ToString();
 
             // Make the POST request
-            var response = await _httpClient.PostAsJsonAsync(operationUrl, takeSlotDto);
+
+            // Serialize the DTO to JSON for logging
+            var serializedBody = System.Text.Json.JsonSerializer.Serialize(takeSlotDto, new System.Text.Json.JsonSerializerOptions
+            {
+                WriteIndented = true
+            });
+
+            this._logger.LogInformation($"serializedBody: {serializedBody}");
+
+            // Create the HTTP content
+            var content = new StringContent(serializedBody, System.Text.Encoding.UTF8, "application/json");
+
+            // Make the POST request
+            var response = await _httpClient.PostAsync(operationUrl, content);
 
             // Handle the response
             if (!response.IsSuccessStatusCode)
@@ -120,6 +139,5 @@ namespace Docplanner.Infrastructure.SlotService.Repositories
                     response.StatusCode);
             }
         }
-
     }
 }
