@@ -44,6 +44,11 @@ namespace Docplanner.Application.UseCases.Availability
                 throw new KeyNotFoundException("No available slot found for the given start date.");
             }
 
+            if (availableSlot.Busy)
+            {
+                throw new ArgumentException("The requested slot is already busy."); // ArgumentException aligns with the concept of a 400 Bad Request.
+            }
+
             var end = bookSlot.Start.AddMinutes(availableSlots.SlotDurationMinutes);
 
             // Map domain model to DTO
@@ -65,7 +70,6 @@ namespace Docplanner.Application.UseCases.Availability
             };
 
             await this._availabilityRepository.TakeSlotAsync(takeSlotDto);
-
         }
     }
 }

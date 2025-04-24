@@ -26,14 +26,38 @@ namespace Docplanner.Api.Middlewares
             }
         }
 
+        /// <summary>
+        /// Handles exceptions and returns a JSON response with the error details.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="exception"></param>
+        /// <returns></returns>
+        /// <remarks>By design the API uses Built-in standard exceptions in .NET, so I don't need to create a custom exception.
+        /// This approach keeps the code clean and leverages built-in .NET exceptions effectively.
+        /// </remarks>
         private Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
             string? json = null;
 
+            if (exception is ArgumentException argEx)
+            {
+                _logger.LogWarning(argEx, "Invalid request: {Message}", argEx.Message);
+
+                var errorDetails = new
+                {
+                    Title = "Bad Request",
+                    Detail = argEx.Message
+                };
+
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                context.Response.ContentType = "application/json";
+                json = JsonSerializer.Serialize(errorDetails);
+                return context.Response.WriteAsync(json);
+            }
 
             if (exception is AutoMapperMappingException mapEx)
             {
-                _logger.LogError(mapEx, "AutoMapper mapping failed.");
+                _logger.LogWarning(mapEx, "AutoMapper mapping failed.");
 
                 var errorDetails = new
                 {
@@ -54,7 +78,7 @@ namespace Docplanner.Api.Middlewares
 
             if (exception is AutoMapperConfigurationException configEx)
             {
-                _logger.LogError(configEx, "AutoMapper configuration is invalid.");
+                _logger.LogWarning(configEx, "AutoMapper configuration is invalid.");
 
                 var errorDetails = new
                 {
@@ -134,7 +158,7 @@ namespace Docplanner.Api.Middlewares
 
             if (exception is JsonException jsonEx)
             {
-                _logger.LogError(jsonEx, "Failed to process JSON data.");
+                _logger.LogWarning(jsonEx, "Failed to process JSON data.");
 
                 var errorDetails = new
                 {
@@ -149,7 +173,7 @@ namespace Docplanner.Api.Middlewares
             }
 
             // Other exceptions
-            _logger.LogError(exception, "An unexpected error occurred.");
+            _logger.LogWarning(exception, "An unexpected error occurred.");
             var response = new
             {
                 Title = "An unexpected error occurred.",

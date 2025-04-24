@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
 using Docplanner.Application.Interfaces.Repositories;
 using Docplanner.Domain.Models;
+using Docplanner.Domain.Models.Configuration;
 using Docplanner.Infrastructure.SlotService.Models;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Net.Http.Json;
 
 namespace Docplanner.Infrastructure.SlotService.Repositories
@@ -13,15 +15,26 @@ namespace Docplanner.Infrastructure.SlotService.Repositories
         private readonly HttpClient _httpClient;
         private readonly ILogger<AvailabilityApiRepository> _logger;
         private readonly IMapper _mapper;
+        private readonly AvailabilityApiOptions _configuration;
 
         public AvailabilityApiRepository(
             HttpClient httpClient,
             ILogger<AvailabilityApiRepository> logger,
-            IMapper mapper)
+            IMapper mapper,
+            IOptions<AvailabilityApiOptions> options)
         {
-            this._httpClient = httpClient;
-            this._logger = logger;
-            this._mapper = mapper;
+            _httpClient = httpClient;
+            _logger = logger;
+            _mapper = mapper;
+            _configuration = options.Value;
+
+            if (_httpClient.BaseAddress == null && !String.IsNullOrWhiteSpace(_configuration.BaseUrl))
+            {
+                // Set the BaseAddress for HttpClient
+                _httpClient.BaseAddress = new Uri(_configuration.BaseUrl);
+
+                throw new ArgumentNullException(nameof(httpClient.BaseAddress), "Base address for HttpClient cannot be null.");
+            }
         }
 
         public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)

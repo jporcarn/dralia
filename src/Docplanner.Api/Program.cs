@@ -2,11 +2,17 @@ using Docplanner.Api.Handlers;
 using Docplanner.Api.Middlewares;
 using Docplanner.Application.Interfaces.Repositories;
 using Docplanner.Application.UseCases.Availability;
+using Docplanner.Domain.Models.Configuration;
 using Docplanner.Infrastructure.SlotService.Repositories;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// IOptions<> pattern provides a way to access configuration settings in a strongly typed manner.
+// Bind the AvailabilityApi section to AvailabilityApiOptions
+builder.Services.Configure<AvailabilityApiOptions>(builder.Configuration.GetSection("AvailabilityApi"));
 
 // Access Configuration
 var configuration = builder.Configuration;
@@ -49,23 +55,21 @@ builder.Services.AddTransient<ErrorHandlingMiddleware>();
 // Register AutoMapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
-string baseUrlString = configuration.GetValue<string>("AvailabilityApi:BaseUrl") ?? "http://localhost/api";
-
-builder.Services.AddHttpClient<IAvailabilityRepository, AvailabilityApiRepository>(client =>
+builder.Services.AddHttpClient<IAvailabilityRepository, AvailabilityApiRepository>((sp, client) =>
 {
-    client.BaseAddress = new Uri(baseUrlString);
-})
-    .AddHttpMessageHandler(() =>
+    // Retrieve the AvailabilityApiOptions from the service provider
+    var configuration = sp.GetRequiredService<IOptions<AvailabilityApiOptions>>().Value;
+
+    if (!String.IsNullOrWhiteSpace(configuration.BaseUrl))
     {
-        var config = builder.Configuration.GetSection("AvailabilityApi:Credentials");
+        client.BaseAddress = new Uri(configuration.BaseUrl);
+    }
+})
+    .AddHttpMessageHandler((sp) =>
+    {
+        var configuration = sp.GetRequiredService<IOptions<AvailabilityApiOptions>>().Value;
 
-        string username = (Environment.GetEnvironmentVariable("AVAILABILITYAPI__CREDENTIALS__USERNAME")
-                          ?? config["Username"]) ?? string.Empty;
-
-        string password = (Environment.GetEnvironmentVariable("AVAILABILITYAPI__CREDENTIALS__PASSWORD")
-                          ?? config["Password"]) ?? string.Empty;
-
-        return new BasicAuthHandler(config["Username"] ?? string.Empty, config["Password"] ?? string.Empty);
+        return new BasicAuthHandler(configuration.Credentials.Username, configuration.Credentials.Password);
     });
 
 // Use AddScoped to align their lifecycle with the HTTP request.
