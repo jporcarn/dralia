@@ -71,6 +71,7 @@ builder.Services.AddHttpClient<IAvailabilityRepository, AvailabilityApiRepositor
 // Use AddScoped to align their lifecycle with the HTTP request.
 // This ensures efficient resource usage and avoids potential lifecycle mismatches.
 builder.Services.AddScoped<IGetAvailableSlotsHandler, GetAvailableSlotsHandler>();
+builder.Services.AddScoped<IBookSlotHandler, BookSlotHandler>();
 
 // Add health checks
 builder.Services.AddHealthChecks()

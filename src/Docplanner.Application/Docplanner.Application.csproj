@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Docplanner.Domain\Docplanner.Domain.csproj" />
+    <ProjectReference Include="..\Docplanner.Infrastructure.SlotService.Models\Docplanner.Infrastructure.SlotService.Models.csproj" />
   </ItemGroup>
 
   <ItemGroup>

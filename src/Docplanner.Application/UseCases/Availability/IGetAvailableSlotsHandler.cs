@@ -1,4 +1,4 @@
-﻿using Docplanner.Api.Models;
+﻿using Docplanner.Domain.Models;
 
 namespace Docplanner.Application.UseCases.Availability
 {

@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using AutoMapper;
+using System.Net;
 using System.Text.Json;
 
 namespace Docplanner.Api.Middlewares
@@ -25,8 +26,130 @@ namespace Docplanner.Api.Middlewares
             }
         }
 
-        private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+        private Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
+            string? json = null;
+
+
+            if (exception is AutoMapperMappingException mapEx)
+            {
+                _logger.LogError(mapEx, "AutoMapper mapping failed.");
+
+                var errorDetails = new
+                {
+                    DestinationMember = mapEx.MemberMap?.DestinationName,
+                    Detail = mapEx.InnerException?.Message ?? mapEx.Message,
+                    MappingDestinationType = mapEx.Types?.DestinationType?.FullName,
+                    MappingSourceType = mapEx.Types?.SourceType?.FullName,
+                    Path = mapEx.MemberMap?.SourceMember?.DeclaringType?.FullName,
+                    SourceMember = mapEx.MemberMap?.SourceMember?.Name,
+                    Title = "Data Processing Error",
+                };
+
+                context.Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
+                context.Response.ContentType = "application/json";
+                json = JsonSerializer.Serialize(errorDetails);
+                return context.Response.WriteAsync(json);
+            }
+
+            if (exception is AutoMapperConfigurationException configEx)
+            {
+                _logger.LogError(configEx, "AutoMapper configuration is invalid.");
+
+                var errorDetails = new
+                {
+                    Detail = configEx.Message,
+                    Title = "Mapping Configuration Error",
+                };
+
+                context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                context.Response.ContentType = "application/json";
+                json = JsonSerializer.Serialize(errorDetails);
+                return context.Response.WriteAsync(json);
+            }
+
+            if (exception is KeyNotFoundException keyEx)
+            {
+                _logger.LogWarning(keyEx, "the server cannot find the requested resource");
+
+                var errorDetails = new
+                {
+                    Title = "the server cannot find the requested resource",
+                    Detail = keyEx.Message
+                };
+
+                context.Response.StatusCode = StatusCodes.Status404NotFound;
+                context.Response.ContentType = "application/json";
+                json = JsonSerializer.Serialize(errorDetails);
+                return context.Response.WriteAsync(json);
+            }
+
+            if (exception is InvalidOperationException opEx)
+            {
+                _logger.LogWarning(opEx, "Invalid operation occurred during data processing.");
+
+                var errorDetails = new
+                {
+                    Title = "Data Processing Error",
+                    Detail = opEx.Message
+                };
+
+                context.Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
+                context.Response.ContentType = "application/json";
+                json = JsonSerializer.Serialize(errorDetails);
+                return context.Response.WriteAsync(json);
+            }
+
+            if (exception is TaskCanceledException || exception is OperationCanceledException)
+            {
+                _logger.LogWarning(exception, "A request to an external service timed out.");
+
+                var errorDetails = new
+                {
+                    Title = "Request Timeout",
+                    Detail = "The request to an external service timed out. Please try again later."
+                };
+
+                context.Response.StatusCode = StatusCodes.Status504GatewayTimeout;
+                context.Response.ContentType = "application/json";
+                json = JsonSerializer.Serialize(errorDetails);
+                return context.Response.WriteAsync(json);
+            }
+
+            if (exception is HttpRequestException httpEx)
+            {
+                _logger.LogWarning(httpEx, "An HTTP request to an external service failed.");
+
+                var errorDetails = new
+                {
+                    Title = "External Service Error",
+                    Detail = httpEx.Message
+                };
+
+                context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable; // TODO: Decide whether to propagate the external API status code or not. E.g.: ((int?)httpEx.StatusCode) ?? StatusCodes.Status503ServiceUnavailable
+                context.Response.ContentType = "application/json";
+                json = JsonSerializer.Serialize(errorDetails);
+                return context.Response.WriteAsync(json);
+            }
+
+            if (exception is JsonException jsonEx)
+            {
+                _logger.LogError(jsonEx, "Failed to process JSON data.");
+
+                var errorDetails = new
+                {
+                    Title = "Invalid JSON Format",
+                    Detail = jsonEx.Message
+                };
+
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                context.Response.ContentType = "application/json";
+                json = JsonSerializer.Serialize(errorDetails);
+                return context.Response.WriteAsync(json);
+            }
+
+            // Other exceptions
+            _logger.LogError(exception, "An unexpected error occurred.");
             var response = new
             {
                 Title = "An unexpected error occurred.",
@@ -36,7 +159,7 @@ namespace Docplanner.Api.Middlewares
 
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-            var json = JsonSerializer.Serialize(response);
+            json = JsonSerializer.Serialize(response);
 
             return context.Response.WriteAsync(json);
         }

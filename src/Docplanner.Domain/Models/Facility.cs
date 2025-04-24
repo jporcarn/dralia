@@ -1,4 +1,4 @@
-﻿namespace Docplanner.Api.Models
+﻿namespace Docplanner.Domain.Models
 {
     public class Facility
     {

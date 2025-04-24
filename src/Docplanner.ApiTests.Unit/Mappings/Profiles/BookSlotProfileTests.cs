@@ -1,0 +1,52 @@
+﻿using AutoFixture;
+using AutoMapper;
+using Docplanner.Api.Mappings.Profiles;
+using Docplanner.Api.Models;
+using Docplanner.Domain.Models;
+using FluentAssertions;
+using Xunit;
+
+namespace Docplanner.ApiTests.Unit.Mappings.Profiles
+{
+    public class BookSlotProfileTests
+    {
+        private readonly Fixture _fixture;
+        private readonly IMapper _mapper;
+
+        public BookSlotProfileTests()
+        {
+            // Initialize AutoMapper with the BookSlotProfile
+            var config = new MapperConfiguration(cfg =>
+            {
+                cfg.AddProfile<PatientProfile>();
+                cfg.AddProfile<BookSlotProfile>();
+            });
+
+            _mapper = config.CreateMapper();
+
+            // Initialize AutoFixture
+            _fixture = new Fixture();
+        }
+
+        [Fact]
+        public void BookSlotProfile_ConfigurationIsValid()
+        {
+            // Assert            
+            _mapper.ConfigurationProvider.AssertConfigurationIsValid();
+        }
+
+        [Fact]
+        public void BookSlotProfile_ShouldMapBookSlotRequestToBookSlot()
+        {
+            // Arrange
+            var bookSlotRequest = _fixture.Create<BookSlotRequest>();
+
+            // Act
+            var result = _mapper.Map<BookSlot>(bookSlotRequest);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Should().BeEquivalentTo(bookSlotRequest, options => options.ExcludingMissingMembers());
+        }
+    }
+}

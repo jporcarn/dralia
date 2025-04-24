@@ -1,4 +1,4 @@
-﻿using Docplanner.Api.Models;
+﻿using Docplanner.Domain.Models;
 using Docplanner.Infrastructure.SlotService.Mappings.Resolvers;
 using Docplanner.Infrastructure.SlotService.Models;
 using FluentAssertions;

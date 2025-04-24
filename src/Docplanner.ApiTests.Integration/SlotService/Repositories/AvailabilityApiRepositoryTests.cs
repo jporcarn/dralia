@@ -1,13 +1,14 @@
 ﻿using AutoMapper;
 using Docplanner.Api.Handlers;
-using Docplanner.Api.Models;
 using Docplanner.Application.Interfaces.Repositories;
+using Docplanner.Domain.Models;
 using Docplanner.Infrastructure.SlotService.Mappings.Profiles;
 using Docplanner.Infrastructure.SlotService.Repositories;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System.Net;
 using Xunit;
 
@@ -19,6 +20,7 @@ namespace Docplanner.ApiTests.Integration.SlotService.Repositories
         private readonly HttpClient _httpClient;
         private readonly IMapper _mapper;
         private readonly IAvailabilityRepository _repository;
+        private readonly ILogger<AvailabilityApiRepository> _logger;
 
         public AvailabilityApiRepositoryTests(WebApplicationFactory<Program> factory)
         {
@@ -28,6 +30,7 @@ namespace Docplanner.ApiTests.Integration.SlotService.Repositories
             var scope = factory.Services.CreateScope();
             _repository = scope.ServiceProvider.GetRequiredService<IAvailabilityRepository>();
 
+            _logger = scope.ServiceProvider.GetRequiredService<ILogger<AvailabilityApiRepository>>();
             #endregion Setup Using the DI Container
 
             #region Setup Using the Configuration
@@ -82,7 +85,7 @@ namespace Docplanner.ApiTests.Integration.SlotService.Repositories
             }
 
             var mondayDateOnly = new DateOnly(mondayOfTodaysWeek.Year, mondayOfTodaysWeek.Month, mondayOfTodaysWeek.Day);
-            var repository = new AvailabilityApiRepository(_httpClient, _mapper);
+            var repository = new AvailabilityApiRepository(_httpClient, _logger, _mapper);
 
             // Act
             WeeklySlots? result = null;
@@ -124,11 +127,15 @@ namespace Docplanner.ApiTests.Integration.SlotService.Repositories
             Assert.NotNull(result);
 
             result.Facility.Should().NotBeNull();
-            result.Facility.Should().BeEquivalentTo(new Facility
+            result.Facility.Should().BeEquivalentTo(new
             {
-                FacilityId = Guid.Parse("7b22d81f-cc29-4e47-8118-7296536429ae"),
+                // FacilityId = Guid.Parse("7b22d81f-cc29-4e47-8118-7296536429ae"), // This value changes in the API
                 Name = "Las Palmeras",
                 Address = "Plaza de la independencia 36, 38006 Santa Cruz de Tenerife"
+            }, (opt) =>
+            {
+                opt.ExcludingMissingMembers();
+                return opt;
             });
 
             result.SlotDurationMinutes.Should().Be(10);

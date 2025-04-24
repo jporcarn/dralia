@@ -1,8 +1,9 @@
 ﻿using AutoFixture;
 using AutoFixture.AutoMoq;
-using Docplanner.Api.Models;
 using Docplanner.Application.Interfaces.Repositories;
 using Docplanner.Application.UseCases.Availability;
+using Docplanner.Application.Utilities;
+using Docplanner.Domain.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -37,7 +38,7 @@ namespace Docplanner.ApplicationTests.Unit.UseCases.Availability
         public void GetMondayOfGivenYearAndWeek_Should_Return_Correct_Monday(int year, int week, string expectedMonday)
         {
             // Act
-            var result = GetAvailableSlotsHandler.GetMondayOfGivenYearAndWeek(year, week);
+            var result = DateUtilities.GetMondayOfGivenYearAndWeek(year, week);
 
             // Assert
             result.Should().Be(DateOnly.Parse(expectedMonday));
