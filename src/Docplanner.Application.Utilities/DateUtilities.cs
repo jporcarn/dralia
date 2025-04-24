@@ -1,14 +1,16 @@
-﻿namespace Docplanner.Application.Utilities
+﻿using System.Globalization;
+
+namespace Docplanner.Application.Utilities
 {
-    internal class DateUtilities
+    public class DateUtilities
     {
         /// <summary>
-        /// ISO week date standard (ISO-8601)
+        /// Monday date based on ISO week date standard (ISO-8601)
         /// </summary>
         /// <param name="year">Year</param>
         /// <param name="week">Week</param>
         /// <returns></returns>
-        internal static DateOnly GetMondayOfGivenYearAndWeek(int year, int week)
+        public static DateOnly GetMondayOfGivenYearAndWeek(int year, int week)
         {
             // Calculate the first day of the year
             var firstDayOfYear = new DateTime(year, 1, 1);
@@ -22,6 +24,17 @@
             // Convert to DateOnly
             var mondayDateOnly = new DateOnly(mondayOfWeek.Year, mondayOfWeek.Month, mondayOfWeek.Day);
             return mondayDateOnly;
+        }
+
+        /// <summary>
+        ///  Week number based on ISO week date standard (ISO-8601)
+        /// </summary>
+        /// <param name="start"></param>
+        /// <returns></returns>
+        public static int GetWeekOfYear(DateTime start)
+        {
+            int weekNumber = CultureInfo.CurrentCulture.Calendar.GetWeekOfYear(start, CalendarWeekRule.FirstDay, DayOfWeek.Monday);
+            return weekNumber;
         }
     }
 }
