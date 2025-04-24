@@ -26,6 +26,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Docplanner.InfrastructureTe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Docplanner.Test.Utilities", "Docplanner.Test.Utilities\Docplanner.Test.Utilities.csproj", "{4DFB1BFE-6F02-40B6-B639-6703C6B7F2CE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Docplanner.Application.Utilities", "Docplanner.Application.Utilities\Docplanner.Application.Utilities.csproj", "{AB8489A5-35AE-4290-8BDB-A0672F6FAFE2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -76,6 +78,10 @@ Global
 		{4DFB1BFE-6F02-40B6-B639-6703C6B7F2CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4DFB1BFE-6F02-40B6-B639-6703C6B7F2CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4DFB1BFE-6F02-40B6-B639-6703C6B7F2CE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AB8489A5-35AE-4290-8BDB-A0672F6FAFE2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB8489A5-35AE-4290-8BDB-A0672F6FAFE2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB8489A5-35AE-4290-8BDB-A0672F6FAFE2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB8489A5-35AE-4290-8BDB-A0672F6FAFE2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

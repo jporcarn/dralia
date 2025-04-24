@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Docplanner.Application.Utilities\Docplanner.Application.Utilities.csproj" />
     <ProjectReference Include="..\Docplanner.Domain\Docplanner.Domain.csproj" />
     <ProjectReference Include="..\Docplanner.Infrastructure.SlotService.Models\Docplanner.Infrastructure.SlotService.Models.csproj" />
   </ItemGroup>
@@ -20,6 +21,10 @@
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>Docplanner.ApplicationTests.Unit</_Parameter1>
     </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Utilities\" />
   </ItemGroup>
 
   
