@@ -14,13 +14,17 @@ import { WeeklySlotsResponse } from 'src/app/services/slotapi-client.service';
 export class AvailabilityTableComponent implements OnInit {
   weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
-  slots: { [key: string]: string[] } = {
-    Monday: ['9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM'],
-    Tuesday: ['9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM'],
-    Wednesday: ['9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM'],
-    Thursday: ['9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM'],
-    Friday: ['9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM'],
+  slots: {
+    [key: string]: { description: string; busy: boolean; empty: boolean }[];
+  } = {
+    Monday: [{ description: 'Loading ...', busy: true, empty: false }],
+    Tuesday: [{ description: 'Loading ...', busy: true, empty: false }],
+    Wednesday: [{ description: 'Loading ...', busy: true, empty: false }],
+    Thursday: [{ description: 'Loading ...', busy: true, empty: false }],
+    Friday: [{ description: 'Loading ...', busy: true, empty: false }],
   };
+
+  slotRows: number[] = [0];
 
   years: number[] = [];
   weeks: {
@@ -29,7 +33,8 @@ export class AvailabilityTableComponent implements OnInit {
     startDate: string;
     endDate: string;
   }[] = [];
-  selectedWeek: any;
+
+  selectedWeek: number = 1;
   selectedYear: number = moment().year();
 
   constructor(
@@ -41,7 +46,7 @@ export class AvailabilityTableComponent implements OnInit {
   ngOnInit(): void {
     this.generateYears();
     this.generateWeeks(this.selectedYear);
-    this.selectedWeek = this.weeks[0]; // Default to the first week
+    this.selectedWeek = this.weeks[0].weekNumber; // Default to the first week
     this.onWeekChange(new Event('init')); // Fetch slots for the default week
   }
 
@@ -99,7 +104,7 @@ export class AvailabilityTableComponent implements OnInit {
 
     // Call the API to fetch weekly slots
     this.slotService
-      .getWeeklySlots(this.selectedYear, this.selectedWeek.weekNumber)
+      .getWeeklySlots(this.selectedYear, this.selectedWeek)
       .subscribe({
         next: (response: WeeklySlotsResponse) => {
           console.log('Weekly slots response:', response);
@@ -113,7 +118,7 @@ export class AvailabilityTableComponent implements OnInit {
 
   onYearChange(event: Event): void {
     this.generateWeeks(this.selectedYear); // Regenerate weeks for the selected year
-    this.selectedWeek = this.weeks[0]; // Reset to the first week of the selected year
+    this.selectedWeek = this.weeks[0].weekNumber; // Reset to the first week of the selected year
     this.onWeekChange(event); // Trigger week change logic
   }
 
@@ -126,14 +131,28 @@ export class AvailabilityTableComponent implements OnInit {
       response.days.forEach((dailySlot) => {
         if (dailySlot.dayOfWeek && dailySlot.slots) {
           // Map dayOfWeek to the key and extract start times from slots
-          const slots = dailySlot.slots.map(
-            (slot) => this.datePipe.transform(slot.start, 'HH:mm') ?? '??:??'
-          );
+          const slots = dailySlot.slots.map((slot) => {
+            return {
+              description:
+                this.datePipe.transform(slot.start, 'HH:mm') ?? '??:??',
+              busy: slot.busy ?? true,
+              empty: slot.empty ?? false,
+            };
+          });
 
           this.slots[dailySlot.dayOfWeek] = slots;
         }
       });
     }
     console.log('Mapped slots:', this.slots);
+
+    // Calculate the number of rows needed based on the maximum number of slots
+    this.slotRows = [];
+
+    const maxSlots = Math.max(
+      ...Object.values(this.slots).map((slots) => slots.length)
+    );
+    this.slotRows = Array.from({ length: maxSlots }, (_, i) => i);
+    // console.log('Slot rows:', this.slotRows);
   }
 }

@@ -21,7 +21,7 @@
       [(ngModel)]="selectedWeek"
       (change)="onWeekChange($event)"
     >
-      <option *ngFor="let week of weeks" [value]="week">
+      <option *ngFor="let week of weeks" [value]="week.weekNumber">
         {{ week.year }} - Week {{ week.weekNumber }} ({{ week.startDate }} -
         {{ week.endDate }})
       </option>
@@ -37,15 +37,37 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let rowIndex of [0, 1, 2, 3, 4]">
-          <td *ngFor="let day of weekdays" class="text-center">
-            <ng-container *ngIf="slots[day][rowIndex]">
+        <tr *ngFor="let rowIndex of slotRows">
+          <td
+            *ngFor="let day of weekdays"
+            class="text-center"
+            [ngClass]="{
+              'table-secondary':
+                slots[day].length > 0 &&
+                slots[day][rowIndex] &&
+                slots[day][rowIndex].empty
+            }"
+          >
+            <ng-container
+              *ngIf="
+                slots[day].length > 0 &&
+                slots[day][rowIndex] &&
+                !slots[day][rowIndex].empty
+              "
+            >
+              <!-- Show span if the slot is busy -->
+              <span *ngIf="slots[day][rowIndex].busy" class="badge bg-danger">
+                {{ slots[day][rowIndex].description }}
+              </span>
+
+              <!-- Show anchor if the slot is not busy -->
               <a
+                *ngIf="!slots[day][rowIndex].busy"
                 href="#"
-                (click)="onBook($event, day, slots[day][rowIndex])"
+                (click)="onBook($event, day, slots[day][rowIndex].description)"
                 class="btn btn-link"
               >
-                {{ slots[day][rowIndex] }}
+                {{ slots[day][rowIndex].description }}
               </a>
             </ng-container>
           </td>

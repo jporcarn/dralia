@@ -540,6 +540,7 @@ export interface IPatientRequest {
 
 export class SlotResponse implements ISlotResponse {
   busy?: boolean;
+  empty?: boolean;
   end?: Date;
   start?: Date;
 
@@ -555,6 +556,7 @@ export class SlotResponse implements ISlotResponse {
   init(_data?: any) {
     if (_data) {
       this.busy = _data['busy'];
+      this.empty = _data['empty'];
       this.end = _data['end']
         ? new Date(_data['end'].toString())
         : <any>undefined;
@@ -574,6 +576,7 @@ export class SlotResponse implements ISlotResponse {
   toJSON(data?: any) {
     data = typeof data === 'object' ? data : {};
     data['busy'] = this.busy;
+    data['empty'] = this.empty;
     data['end'] = this.end ? this.end.toISOString() : <any>undefined;
     data['start'] = this.start ? this.start.toISOString() : <any>undefined;
     return data;
@@ -582,6 +585,7 @@ export class SlotResponse implements ISlotResponse {
 
 export interface ISlotResponse {
   busy?: boolean;
+  empty?: boolean;
   end?: Date;
   start?: Date;
 }
