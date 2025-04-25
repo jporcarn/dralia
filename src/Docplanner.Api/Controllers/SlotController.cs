@@ -56,7 +56,9 @@ namespace Docplanner.Api.Controllers
                     return NotFound("No slots found for the given week.");
                 }
 
-                return Ok(response);
+                var apiResponse = this._mapper.Map<WeeklySlotsResponse>(response);
+
+                return Ok(apiResponse);
             }
             catch (KeyNotFoundException ex)
             {

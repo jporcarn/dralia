@@ -6,20 +6,21 @@ using Docplanner.Domain.Models;
 using FluentAssertions;
 using Xunit;
 
-namespace Docplanner.ApiTests.Unit.Mappings.Profiles
+namespace Docplanner.Api.Mappings.Profiles.Tests
 {
-    public class BookSlotProfileTests
+    public class FacilityProfileTests
     {
         private readonly Fixture _fixture;
         private readonly IMapper _mapper;
 
-        public BookSlotProfileTests()
+        public FacilityProfileTests()
         {
             // Initialize AutoMapper with the relevant profiles
             var config = new MapperConfiguration(cfg =>
             {
-                cfg.AddProfile<PatientProfile>();
-                cfg.AddProfile<BookSlotProfile>();
+                // cfg.AddProfile<>();
+
+                cfg.AddProfile<FacilityProfile>();
             });
 
             _mapper = config.CreateMapper();
@@ -29,24 +30,24 @@ namespace Docplanner.ApiTests.Unit.Mappings.Profiles
         }
 
         [Fact]
-        public void BookSlotProfile_ConfigurationIsValid()
+        public void FacilityProfile_ConfigurationIsValid()
         {
             // Assert
             _mapper.ConfigurationProvider.AssertConfigurationIsValid();
         }
 
         [Fact]
-        public void BookSlotProfile_Should_Map_BookSlotRequest_To_BookSlot()
+        public void FacilityProfile_Should_Map_Facility_To_FacilityResponse()
         {
             // Arrange
-            var bookSlotRequest = _fixture.Create<BookSlotRequest>();
+            var domainObject = _fixture.Create<Facility>();
 
             // Act
-            var result = _mapper.Map<BookSlot>(bookSlotRequest);
+            var result = _mapper.Map<FacilityResponse>(domainObject);
 
             // Assert
             result.Should().NotBeNull();
-            result.Should().BeEquivalentTo(bookSlotRequest, options => options.ExcludingMissingMembers());
+            result.Should().BeEquivalentTo(domainObject, options => options.ExcludingMissingMembers());
         }
     }
 }

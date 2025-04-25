@@ -4,11 +4,11 @@ using Docplanner.Domain.Models;
 
 namespace Docplanner.Api.Mappings.Profiles
 {
-    public class PatientProfile : Profile
+    public class SlotProfile : Profile
     {
-        public PatientProfile()
+        public SlotProfile()
         {
-            CreateMap<PatientRequest, Patient>(MemberList.Destination);
+            CreateMap<Slot, SlotResponse>(MemberList.Destination);
         }
     }
 }

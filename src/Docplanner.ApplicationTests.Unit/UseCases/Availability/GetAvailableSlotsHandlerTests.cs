@@ -2,8 +2,8 @@
 using AutoFixture.AutoMoq;
 using Docplanner.Application.Interfaces.Repositories;
 using Docplanner.Application.UseCases.Availability;
-using Docplanner.Application.Utilities;
 using Docplanner.Domain.Models;
+using Docplanner.Test.Utilities;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Docplanner.ApplicationTests.Unit.UseCases.Availability
 {
-    public class GetAvailableSlotsHandlerTests
+    public partial class GetAvailableSlotsHandlerTests
     {
         private readonly IFixture _fixture;
 
@@ -38,7 +38,7 @@ namespace Docplanner.ApplicationTests.Unit.UseCases.Availability
         public void GetMondayOfGivenYearAndWeek_Should_Return_Correct_Monday(int year, int week, string expectedMonday)
         {
             // Act
-            var result = DateUtilities.GetMondayOfGivenYearAndWeek(year, week);
+            var result = Application.Utilities.DateUtilities.GetMondayOfGivenYearAndWeek(year, week);
 
             // Assert
             result.Should().Be(DateOnly.Parse(expectedMonday));
@@ -91,16 +91,195 @@ namespace Docplanner.ApplicationTests.Unit.UseCases.Availability
                 .WithMessage("No slots found for the given year and week.");
         }
 
-        public class DateOnlyCustomization : ICustomization
+        [Fact]
+        public async Task GetWeeklySlotsAsync_Should_Return_Correctly_Filled_Slots()
         {
-            public void Customize(IFixture fixture)
+            // Arrange
+            var mockRepository = new Mock<IAvailabilityRepository>();
+            var mockLogger = new Mock<ILogger<GetAvailableSlotsHandler>>();
+
+            var mondayDate = new DateOnly(2024, 12, 30);
+            var weeklySlots = new WeeklySlots
             {
-                fixture.Customize<DateOnly>(composer =>
-                    composer.FromFactory(() =>
+                Days = new List<DailySlots>
+                {
+                    new DailySlots
                     {
-                        var randomDate = fixture.Create<DateTime>();
-                        return new DateOnly(randomDate.Year, randomDate.Month, randomDate.Day);
-                    }));
+                        Date = mondayDate,
+                        DayOfWeek = "Monday",
+                        Slots = GetWeekDaySlots("Monday"),
+                        WorkPeriod = new WorkPeriod { StartHour = 9, EndHour = 17, LunchStartHour = 13, LunchEndHour = 14 }
+                    },
+                    new DailySlots
+                    {
+                        Date = mondayDate.AddDays(1),
+                        DayOfWeek = "Tuesday",
+                        Slots = GetWeekDaySlots("Tuesday"),
+                        WorkPeriod = null
+                    },
+                    new DailySlots
+                    {
+                        Date = mondayDate.AddDays(2),
+                        DayOfWeek = "Wednesday",
+                        Slots = GetWeekDaySlots("Wednesday"),
+                        WorkPeriod = new WorkPeriod { StartHour = 9, EndHour = 17, LunchStartHour = 13, LunchEndHour = 14 }
+                    },
+                    new DailySlots
+                    {
+                        Date = mondayDate.AddDays(3),
+                        DayOfWeek = "Thursday",
+                        Slots = GetWeekDaySlots("Thursday"),
+                        WorkPeriod = null
+                    },
+                    new DailySlots
+                    {
+                        Date = mondayDate.AddDays(4),
+                        DayOfWeek = "Friday",
+                        Slots = GetWeekDaySlots("Friday"),
+                        WorkPeriod = new WorkPeriod { StartHour = 8, EndHour = 16, LunchStartHour = 13, LunchEndHour = 14 }
+                    }
+                },
+                Facility = new Facility { FacilityId = Guid.NewGuid(), Name = "Test Facility", Address = "Test Address" },
+                SlotDurationMinutes = 10
+            };
+
+            mockRepository
+                .Setup(repo => repo.GetWeeklyAvailabilityAsync(It.IsAny<DateOnly>()))
+                .ReturnsAsync(weeklySlots);
+
+            var handler = new GetAvailableSlotsHandler(mockRepository.Object, mockLogger.Object);
+
+            // Act
+            var result = await handler.GetWeeklySlotsAsync(2025, 1);
+
+            // Assert
+            Assert.NotNull(result);
+
+            // 1. Tuesday and Thursday slots are empty
+            Assert.Empty(result.Days.First(d => d.DayOfWeek == "Tuesday").Slots);
+            Assert.Empty(result.Days.First(d => d.DayOfWeek == "Thursday").Slots);
+            Assert.Empty(result.Days.First(d => d.DayOfWeek == "Wednesday").Slots);
+
+            // 2. Monday, and Friday have 6 empty slots
+            Assert.Equal(6, result.Days.First(d => d.DayOfWeek == "Monday").Slots.Count(s => s.Empty));
+            Assert.Equal(6, result.Days.First(d => d.DayOfWeek == "Friday").Slots.Count(s => s.Empty));
+
+            // 3. Monday empty slots are from 8:00 AM to 8:50 AM
+            var mondayEmptySlots = result.Days.First(d => d.DayOfWeek == "Monday").Slots.Where(s => s.Empty).ToList();
+            Assert.Equal(new DateTime(2024, 12, 30, 7, 0, 0, DateTimeKind.Utc), mondayEmptySlots[0].Start);
+            Assert.Equal(new DateTime(2024, 12, 30, 7, 50, 0, DateTimeKind.Utc), mondayEmptySlots.Last().Start);
+
+            // 4. Friday empty slots are from 4:00 PM to 4:50 PM
+            var fridayEmptySlots = result.Days.First(d => d.DayOfWeek == "Friday").Slots.Where(s => s.Empty).ToList();
+            Assert.Equal(new DateTime(2025, 1, 3, 14, 50, 0, DateTimeKind.Utc), fridayEmptySlots[0].Start);
+            Assert.Equal(new DateTime(2025, 1, 3, 15, 40, 0, DateTimeKind.Utc), fridayEmptySlots.Last().Start);
+        }
+
+        private static List<Slot> GetWeekDaySlots(string weekDay)
+        {
+            switch (weekDay)
+            {
+                case "Monday":
+                    return new List<Slot>
+                        {
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 8, 0, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 8, 10, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 8, 10, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 8, 20, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 8, 20, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 8, 30, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 8, 30, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 8, 40, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 8, 40, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 8, 50, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 8, 50, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 9, 0, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 9, 0, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 9, 10, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 9, 10, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 9, 20, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 9, 20, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 9, 30, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 9, 30, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 9, 40, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 9, 40, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 9, 50, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 9, 50, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 10, 0, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 10, 0, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 10, 10, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 10, 10, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 10, 20, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 10, 20, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 10, 30, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 10, 30, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 10, 40, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 10, 40, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 10, 50, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 10, 50, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 11, 0, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 11, 0, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 11, 10, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 11, 10, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 11, 20, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 11, 20, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 11, 30, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 11, 30, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 11, 40, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 11, 40, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 11, 50, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 11, 50, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 12, 0, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 13, 0, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 13, 10, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 13, 10, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 13, 20, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 13, 20, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 13, 30, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 13, 30, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 13, 40, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 13, 40, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 13, 50, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 13, 50, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 14, 0, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 14, 0, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 14, 10, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 14, 10, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 14, 20, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 14, 20, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 14, 30, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 14, 30, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 14, 40, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 14, 40, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 14, 50, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 14, 50, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 15, 0, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 15, 0, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 15, 10, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 15, 10, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 15, 20, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 15, 20, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 15, 30, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 15, 30, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 15, 40, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 15, 40, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 15, 50, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2024, 12, 30, 15, 50, 0, DateTimeKind.Utc), End = new DateTime(2024, 12, 30, 16, 0, 0, DateTimeKind.Utc) }
+                        };
+
+                case "Tuesday":
+                case "Wednesday":
+                case "Thursday":
+                    return new List<Slot>();
+
+                case "Friday":
+                    return new List<Slot>
+                        {
+                            new Slot { Busy = true, Empty = false, Start = new DateTime(2025, 1, 3, 7, 0, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 7, 10, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 7, 10, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 7, 20, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 7, 20, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 7, 30, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 7, 30, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 7, 40, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 7, 40, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 7, 50, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 7, 50, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 8, 0, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 8, 0, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 8, 10, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 8, 10, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 8, 20, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 8, 20, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 8, 30, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 8, 30, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 8, 40, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 8, 40, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 8, 50, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 8, 50, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 9, 0, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 9, 0, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 9, 10, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 9, 10, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 9, 20, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 9, 20, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 9, 30, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 9, 30, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 9, 40, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 9, 40, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 9, 50, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 9, 50, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 10, 0, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 10, 0, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 10, 10, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 10, 10, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 10, 20, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 10, 20, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 10, 30, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 10, 30, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 10, 40, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 10, 40, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 10, 50, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 10, 50, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 11, 0, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 11, 0, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 11, 10, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 11, 10, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 11, 20, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 11, 20, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 11, 30, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 11, 30, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 11, 40, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 11, 40, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 11, 50, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 11, 50, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 12, 0, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 13, 0, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 13, 10, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 13, 10, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 13, 20, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 13, 20, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 13, 30, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 13, 30, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 13, 40, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 13, 40, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 13, 50, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 13, 50, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 14, 0, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 14, 0, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 14, 10, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 14, 10, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 14, 20, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 14, 20, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 14, 30, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 14, 30, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 14, 40, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 14, 40, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 14, 50, 0, DateTimeKind.Utc) },
+                            new Slot { Busy = false, Empty = false, Start = new DateTime(2025, 1, 3, 14, 50, 0, DateTimeKind.Utc), End = new DateTime(2025, 1, 3, 15, 0, 0, DateTimeKind.Utc) }
+                        };
+
+                default:
+                    return new List<Slot>();
             }
         }
     }

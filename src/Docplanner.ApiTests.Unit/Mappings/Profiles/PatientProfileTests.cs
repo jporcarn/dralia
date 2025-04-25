@@ -31,7 +31,7 @@ namespace Docplanner.ApiTests.Unit.Mappings.Profiles
         }
 
         [Fact]
-        public void PatientProfile_ShouldMapPatientRequestToPatientProfile()
+        public void PatientProfile_Should_Map_PatientRequest_To_Patient()
         {
             // Arrange
             var patientRequest = _fixture.Create<PatientRequest>();
