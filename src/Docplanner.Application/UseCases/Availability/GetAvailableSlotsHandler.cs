@@ -4,6 +4,11 @@ using Microsoft.Extensions.Logging;
 
 namespace Docplanner.Application.UseCases.Availability
 {
+
+    /// <summary>
+    /// Handler for getting available slots for a given week and year.
+    /// </summary>
+    /// <remarks>This layer is responsible for orchestrating use cases and implementing business logic. Complex mapping logic that involves business rules, strategies, or configurations</remarks>
     public class GetAvailableSlotsHandler : IGetAvailableSlotsHandler
     {
         private readonly IAvailabilityRepository _availabilityRepository;
