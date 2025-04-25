@@ -15,13 +15,53 @@ export class AvailabilityTableComponent implements OnInit {
   weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
   slots: {
-    [key: string]: { description: string; busy: boolean; empty: boolean }[];
+    [key: string]: {
+      description: string;
+      busy: boolean;
+      empty: boolean;
+      start: Date;
+    }[];
   } = {
-    Monday: [{ description: 'Loading ...', busy: true, empty: false }],
-    Tuesday: [{ description: 'Loading ...', busy: true, empty: false }],
-    Wednesday: [{ description: 'Loading ...', busy: true, empty: false }],
-    Thursday: [{ description: 'Loading ...', busy: true, empty: false }],
-    Friday: [{ description: 'Loading ...', busy: true, empty: false }],
+    Monday: [
+      {
+        description: 'Loading ...',
+        busy: true,
+        empty: false,
+        start: new Date(),
+      },
+    ],
+    Tuesday: [
+      {
+        description: 'Loading ...',
+        busy: true,
+        empty: false,
+        start: new Date(),
+      },
+    ],
+    Wednesday: [
+      {
+        description: 'Loading ...',
+        busy: true,
+        empty: false,
+        start: new Date(),
+      },
+    ],
+    Thursday: [
+      {
+        description: 'Loading ...',
+        busy: true,
+        empty: false,
+        start: new Date(),
+      },
+    ],
+    Friday: [
+      {
+        description: 'Loading ...',
+        busy: true,
+        empty: false,
+        start: new Date(),
+      },
+    ],
   };
 
   slotRows: number[] = [0];
@@ -82,11 +122,14 @@ export class AvailabilityTableComponent implements OnInit {
     }
   }
 
-  onBook(event: Event, day: string, slot: string): void {
+  onBook(event: Event, day: string, slotStart: Date): void {
+    console.log(`Booking ${slotStart} on ${day}`);
+
     event.preventDefault(); // Cancel the default click behavior
 
-    console.log(`Booking ${slot} on ${day}`);
-    this.router.navigate(['/book', slot]);
+    const isoDate = encodeURIComponent(slotStart.toISOString()); // Convert to ISO 8601 and encode
+
+    this.router.navigate(['/book', isoDate]);
   }
 
   onWeekChange(event: Event): void {
@@ -133,6 +176,7 @@ export class AvailabilityTableComponent implements OnInit {
           // Map dayOfWeek to the key and extract start times from slots
           const slots = dailySlot.slots.map((slot) => {
             return {
+              start: slot.start ?? new Date(),
               description:
                 this.datePipe.transform(slot.start, 'HH:mm') ?? '??:??',
               busy: slot.busy ?? true,

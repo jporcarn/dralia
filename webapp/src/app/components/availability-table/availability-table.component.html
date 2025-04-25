@@ -64,7 +64,7 @@
               <a
                 *ngIf="!slots[day][rowIndex].busy"
                 href="#"
-                (click)="onBook($event, day, slots[day][rowIndex].description)"
+                (click)="onBook($event, day, slots[day][rowIndex].start)"
                 class="btn btn-link"
               >
                 {{ slots[day][rowIndex].description }}

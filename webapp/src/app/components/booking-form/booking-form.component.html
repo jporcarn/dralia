@@ -1,3 +1,6 @@
+<button type="button" class="btn btn-info" (click)="fillWithRandomData()">
+  To Me
+</button>
 <form [formGroup]="bookingForm" (ngSubmit)="onSubmit()" class="container mt-4">
   <div class="mb-3">
     <label for="comments" class="form-label">Comments:</label>
@@ -8,6 +11,15 @@
       class="form-control"
       placeholder="Enter your comments"
     />
+    <div
+      *ngIf="
+        bookingForm.get('comments')?.invalid &&
+        bookingForm.get('comments')?.touched
+      "
+      class="text-danger"
+    >
+      Comments are required.
+    </div>
   </div>
 
   <div formGroupName="patient">
@@ -21,6 +33,15 @@
         placeholder="Enter your name"
         required
       />
+      <div
+        *ngIf="
+          bookingForm.get('patient.name')?.invalid &&
+          bookingForm.get('patient.name')?.touched
+        "
+        class="text-danger"
+      >
+        Name is required.
+      </div>
     </div>
 
     <div class="mb-3">
@@ -44,6 +65,15 @@
         placeholder="Enter your email"
         required
       />
+      <div
+        *ngIf="
+          bookingForm.get('patient.email')?.invalid &&
+          bookingForm.get('patient.email')?.touched
+        "
+        class="text-danger"
+      >
+        A valid email is required.
+      </div>
     </div>
 
     <div class="mb-3">
@@ -56,14 +86,26 @@
         placeholder="Enter your phone number"
         required
       />
+      <div
+        *ngIf="
+          bookingForm.get('patient.phone')?.invalid &&
+          bookingForm.get('patient.phone')?.touched
+        "
+        class="text-danger"
+      >
+        Phone number is required.
+      </div>
     </div>
   </div>
 
   <div class="d-flex justify-content-between">
     <button
       type="submit"
-      class="btn btn-primary"
-      [disabled]="bookingForm.invalid"
+      class="btn"
+      [ngClass]="{
+        'btn-primary': bookingForm.valid,
+        'btn-secondary': bookingForm.invalid
+      }"
     >
       Accept
     </button>

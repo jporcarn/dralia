@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { SlotService } from 'src/app/services/slot.service';
 
 @Component({
   selector: 'app-booking-form',
@@ -16,11 +16,13 @@ export class BookingFormComponent implements OnInit {
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
-    private http: HttpClient
+    private slotService: SlotService
   ) {}
 
   ngOnInit(): void {
-    this.start = this.route.snapshot.paramMap.get('start')!;
+    const startQueryParam = this.route.snapshot.paramMap.get('start')!;
+    this.start = decodeURIComponent(startQueryParam);
+
     this.bookingForm = this.fb.group({
       comments: [''],
       patient: this.fb.group({
@@ -32,20 +34,40 @@ export class BookingFormComponent implements OnInit {
     });
   }
 
-  onSubmit(): void {
-    if (this.bookingForm.valid) {
-      const payload = {
-        ...this.bookingForm.value,
-        start: this.start,
-      };
+  fillWithRandomData(): void {
+    this.bookingForm.patchValue({
+      comments: 'This is a test comment.',
+      patient: {
+        name: 'John',
+        secondName: 'Doe',
+        email: 'john.doe@example.com',
+        phone: '1234567890',
+      },
+    });
+  }
 
-      this.http
-        .put(`https://localhost:7236/slot/${this.start}/book`, payload)
-        .subscribe({
-          next: () => this.router.navigate(['/']),
-          error: (err) => alert('Failed to book slot: ' + err.message),
-        });
+  onSubmit(): void {
+    if (this.bookingForm.invalid) {
+      // Mark all controls as touched to trigger validation messages
+      this.bookingForm.markAllAsTouched();
+      return;
     }
+
+    const payload = {
+      ...this.bookingForm.value,
+      start: this.start,
+    };
+
+    const startDate = new Date(this.start);
+    this.slotService.bookSlot(startDate, payload).subscribe({
+      next: (response) => {
+        console.log('Booking successful:', response);
+        this.router.navigate(['/']);
+      },
+      error: (error) => {
+        console.error('Error booking slot:', error);
+      },
+    });
   }
 
   onCancel(): void {
