@@ -60,8 +60,8 @@ The solution is structured into multiple projects, each with a specific responsi
   - `Repositories`: Implements data access logic (e.g., `AvailabilityApiRepository`).
   - `Mappings`: Contains AutoMapper profiles and resolvers for transforming external data into domain models.
 
-
 ## Folder Structure
+
 The solution is organized into the following folder structure:
 
 ```plaintext
@@ -98,13 +98,14 @@ Dralia/
 ## Design Principles
 
 - **Separation of Concerns**: Each layer has a distinct responsibility, ensuring maintainability and scalability.
-    - The architecture is clean and follows the onion/clean architecture principles.
-    - The API acts as a mediator between the frontend and the slot service, ensuring the frontend does not directly interact with the service.
+  - The architecture is clean and follows the onion/clean architecture principles.
+  - The API acts as a mediator between the frontend and the slot service, ensuring the frontend does not directly interact with the service.
 - **Cost-Effective Azure Resources**: Using Azure Static Web Apps (Free Tier) and Azure App Service (Basic Plan) is a great choice for cost-effectiveness
 - **CI/CD Pipeline**: The solution includes a CI/CD pipeline for automated deployment to Azure.
-    - The inclusion of a CI/CD pipeline using GitHub Actions ensures automated deployments and testing.
+  - The inclusion of a CI/CD pipeline using GitHub Actions ensures automated deployments and testing.
 - **Dependency Inversion**: Higher-level layers depend on abstractions, not concrete implementations.
 - **Testability**: The architecture facilitates unit and integration testing by isolating business logic and external dependencies.
+- **IaC**: Infrastructure as Code (IaC) is used to provision Azure resources, ensuring consistent and repeatable deployments.
 
 ---
 
@@ -126,6 +127,42 @@ The solution includes comprehensive testing:
 
 ---
 
+## Error Handling
+
+The API includes global exception handling to ensure meaningful error messages are returned to the client. Common error scenarios include:
+
+- **Invalid Input**: Returns a 400 Bad Request with details about the invalid fields.
+- **Slot Unavailability**: Returns a 409 Conflict if the selected slot is no longer available.
+- **Server Errors**: Returns a 500 Internal Server Error for unexpected issues.
+
+Logs are generated for all errors to assist with debugging.
+
+---
+
+## Slot Service Integration
+
+The API consumes the slot service at `https://draliatest.azurewebsites.net/api/availability` to retrieve available slots. The service is called using an HTTP client, and the response is mapped to domain models for further processing.
+
+During testing, the slot service is mocked to ensure tests are independent of external dependencies.
+
+**By Design**: Assume a Default Time Zone for the Availability API. 
+Since the third-party availability API does not provide time zone information, I assumeed a default time zone for the data it returns. CET (Central European Time).
+
+---
+
+## Infrastructure as Code (IaC)
+
+To ensure consistent and repeatable deployments of the Dralia solution, Infrastructure as Code (IaC) is used to define and provision the required Azure resources. Terraform is the recommended IaC platform for this project due to its flexibility, multi-cloud support, and strong integration with Azure.
+
+### Why Terraform?
+
+- **Declarative Syntax**: Define the desired state of your infrastructure, and Terraform will handle the provisioning.
+- **State Management**: Terraform maintains a state file to track the current state of your infrastructure.
+- **Multi-Cloud Support**: Easily extend the solution to other cloud providers if needed.
+- **Azure Integration**: Terraform provides first-class support for Azure resources.
+
+---
+
 ## Running the Solution Locally
 
 ### Prerequisites
@@ -139,46 +176,50 @@ The solution includes comprehensive testing:
 1. **API Setup**:
    - Navigate to the `Docplanner.Api` project directory.
    - Create an `appsettings.Development.json` file with the following content:
-```json
- {
-   "AvailabilityApi": {
-    "BaseUrl": "https://draliatest.azurewebsites.net/api/availability",
-     "Credentials": {
-       "Username": "your-username",
-       "Password": "your-password"
-     }
-   }
- }
-```
 
-   - Replace `your-username` and `your-password` with the appropriate credentials.
-
-   - Alternatively, you can set the environment variables `AVAILABILITYAPI__BASEURL`, `AVAILABILITYAPI__CREDENTIALS__USERNAME` and `AVAILABILITYAPI__CREDENTIALS__PASSWORD` in the launchSettings.json file.
-   - Navigate to Docplanner.Api/Properties/launchSettings.json and add the following configuration:
 ```json
 {
-    "https": {
-      "commandName": "Project",
-      "dotnetRunMessages": true,
-      "launchBrowser": true,
-      "launchUrl": "swagger",
-      "applicationUrl": "https://localhost:7236;http://localhost:5058",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
-        "AVAILABILITYAPI__BASEURL": "https://draliatest.azurewebsites.net/api/availability",
-        "AVAILABILITYAPI__CREDENTIALS__USERNAME": "your-username",
-        "AVAILABILITYAPI__CREDENTIALS__PASSWORD": "your-password"
-      }
-    },
+  "AvailabilityApi": {
+    "BaseUrl": "https://draliatest.azurewebsites.net/api/availability",
+    "Credentials": {
+      "Username": "your-username",
+      "Password": "your-password"
+    }
+  }
+}
+```
+
+- Replace `your-username` and `your-password` with the appropriate credentials.
+
+- Alternatively, you can set the environment variables `AVAILABILITYAPI__BASEURL`, `AVAILABILITYAPI__CREDENTIALS__USERNAME` and `AVAILABILITYAPI__CREDENTIALS__PASSWORD` in the launchSettings.json file.
+- Navigate to Docplanner.Api/Properties/launchSettings.json and add the following configuration:
+
+```json
+{
+  "https": {
+    "commandName": "Project",
+    "dotnetRunMessages": true,
+    "launchBrowser": true,
+    "launchUrl": "swagger",
+    "applicationUrl": "https://localhost:7236;http://localhost:5058",
+    "environmentVariables": {
+      "ASPNETCORE_ENVIRONMENT": "Development",
+      "AVAILABILITYAPI__BASEURL": "https://draliatest.azurewebsites.net/api/availability",
+      "AVAILABILITYAPI__CREDENTIALS__USERNAME": "your-username",
+      "AVAILABILITYAPI__CREDENTIALS__PASSWORD": "your-password"
+    }
+  }
 }
 ```
 
 2. **SPA Setup**:
+
    - Navigate to the SPA project directory.
    - Run `npm install` to install dependencies.
    - Run `npm start` to start the development server.
 
 3. **Run the API**:
+
    - Use the command `dotnet run` in the `Docplanner.Api` project directory.
 
 4. Access the SPA at `http://localhost:4200` and the API at `https://localhost:7236`.
@@ -188,7 +229,6 @@ The solution includes comprehensive testing:
 ## Deploying to Azure
 
 ### Prerequisites
-
 1. An active Azure Pay-As-You-Go subscription.
 2. Install the [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli).
 3. Download the publish profile for the API from the Azure Portal and store it in the `AZURE_WEBAPP_PUBLISH_PROFILE` GitHub secret.
@@ -211,23 +251,25 @@ The following secrets must be configured in your GitHub repository for CI/CD:
 
 1. **Infrastructure Deployment**:
    - Use the provided PowerShell script:
-```powershell 
+
+```powershell
 $securePassword = Read-Host "Enter Password" -AsSecureString \
 .\deploy-infra.ps1 -Username "techuser" -Password $securePassword
 ```
 
 2. **API Deployment**:
    - Use the provided PowerShell script:
-```powershell 
+
+```powershell
 .\deploy-api.ps1
 ```
 
 3. **SPA Deployment**:
    - Use the provided PowerShell script:
-```powershell 
+
+```powershell
 .\deploy-angular.ps1 -AzureStaticWebAppsApiToken "your-azure-static-web-apps-api-token"
 ```
-
 
 ### Azure Resources
 
@@ -245,12 +287,12 @@ The following cost-effective Azure resources are used:
 - The `AZURE_STATIC_WEB_APPS_API_TOKEN` secret must contain the deployment token for the SPA.
 - The deployment scripts assume that the required Azure resources are already provisioned.
 
-
 ## Next Steps
 
 To further enhance the Dralia solution, the following steps are recommended:
 
 ### 1. Use Azure Key Vault for Storing Credentials
+
 - **Objective**: Securely store the credentials required to call the third-party availability API.
 - **Implementation**:
   - Use [Azure Key Vault](https://learn.microsoft.com/en-us/azure/key-vault/) to store sensitive information such as `AVAILABILITYAPI__CREDENTIALS__USERNAME` and `AVAILABILITYAPI__CREDENTIALS__PASSWORD`.
@@ -262,6 +304,7 @@ To further enhance the Dralia solution, the following steps are recommended:
 ---
 
 ### 2. Decouple the Availability API from the Slot API Using a Message Broker
+
 - **Objective**: Improve scalability and reliability by decoupling the availability API from the slot API.
 - **Implementation**:
   - Use [Azure Service Bus](https://learn.microsoft.com/en-us/azure/service-bus-messaging/) as a message broker for simplicity.
@@ -275,6 +318,7 @@ To further enhance the Dralia solution, the following steps are recommended:
 ---
 
 ### 3. Strategy for Handling Concurrency Conflicts
+
 - **Objective**: Ensure data consistency when multiple users attempt to book the same slot simultaneously.
 - **Implementation**:
   - Use an optimistic concurrency control strategy with [Azure Cosmos DB](https://learn.microsoft.com/en-us/azure/cosmos-db/) or SQL Server.
@@ -288,6 +332,7 @@ To further enhance the Dralia solution, the following steps are recommended:
 ---
 
 ### 4. Create a NoSQL Database for Storing Activity History
+
 - **Objective**: Store the history of activities, such as who and when an appointment was booked or canceled.
 - **Implementation**:
   - Use [Azure Cosmos DB](https://learn.microsoft.com/en-us/azure/cosmos-db/) with a container for activity logs.
@@ -300,6 +345,7 @@ To further enhance the Dralia solution, the following steps are recommended:
 ---
 
 ### 5. Push Notifications for Real-Time Updates
+
 - **Objective**: Notify users in real-time about appointment cancellations or concurrency conflicts.
 - **Implementation**:
   - Use [Azure Notification Hubs](https://learn.microsoft.com/en-us/azure/notification-hubs/) or [SignalR Service](https://learn.microsoft.com/en-us/azure/azure-signalr/) for push notifications.
