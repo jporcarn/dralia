@@ -50,7 +50,7 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(
             "http://localhost:4200", // Allow requests from Angular app
-            "https://white-pebble-0a6d1d903.6.azurestaticapps.net" // Allow requests from Azure Static Web App
+            "https://thankful-field-0927e1203.6.azurestaticapps.net" // Allow requests from Azure Static Web App
         )
         .AllowAnyHeader()
         .AllowAnyMethod();
