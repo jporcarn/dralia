@@ -19,9 +19,9 @@ Write-Host "✅ Angular build completed."
 $env:AZURE_STATIC_WEB_APPS_API_TOKEN = $AzureStaticWebAppsApiToken
 $buildOutput = "$angularProjectRoot\dist\webapp"  
 
-swa deploy `
-  --app-location "$angularProjectRoot" `
-  --output-location $buildOutput `
-  --env production
+az staticwebapp update `
+  --name dralia-spa `
+  --resource-group docplanner-dev-rg `
+  --source $buildOutput
 
 Write-Host "🚀 Angular SPA deployed to Azure Static Web App."
