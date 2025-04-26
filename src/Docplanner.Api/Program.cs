@@ -43,6 +43,17 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+// Add CORS policy
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigins", policy =>
+    {
+        policy.WithOrigins("http://localhost:4200") // Allow requests from Angular app
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 // Response Compression
 builder.Services.AddResponseCompression(options =>
 {
@@ -116,6 +127,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowSpecificOrigins");
 
 app.UseAuthorization();
 

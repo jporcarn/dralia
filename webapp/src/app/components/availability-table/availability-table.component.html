@@ -1,0 +1,78 @@
+<div class="container mt-4">
+  <!-- Year Selector -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <label for="yearSelector" class="form-label me-2">Select Year:</label>
+    <select
+      id="yearSelector"
+      class="form-select"
+      [(ngModel)]="selectedYear"
+      (change)="onYearChange($event)"
+    >
+      <option *ngFor="let year of years" [value]="year">{{ year }}</option>
+    </select>
+  </div>
+
+  <!-- Week Selector -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <label for="weekSelector" class="form-label me-2">Select Week:</label>
+    <select
+      id="weekSelector"
+      class="form-select"
+      [(ngModel)]="selectedWeek"
+      (change)="onWeekChange($event)"
+    >
+      <option *ngFor="let week of weeks" [value]="week.weekNumber">
+        {{ week.year }} - Week {{ week.weekNumber }} ({{ week.startDate }} -
+        {{ week.endDate }})
+      </option>
+    </select>
+  </div>
+
+  <!-- Availability Table -->
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover">
+      <thead class="table-light">
+        <tr>
+          <th *ngFor="let day of weekdays" class="text-center">{{ day }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let rowIndex of slotRows">
+          <td
+            *ngFor="let day of weekdays"
+            class="text-center"
+            [ngClass]="{
+              'table-secondary':
+                slots[day].length > 0 &&
+                slots[day][rowIndex] &&
+                slots[day][rowIndex].empty
+            }"
+          >
+            <ng-container
+              *ngIf="
+                slots[day].length > 0 &&
+                slots[day][rowIndex] &&
+                !slots[day][rowIndex].empty
+              "
+            >
+              <!-- Show span if the slot is busy -->
+              <span *ngIf="slots[day][rowIndex].busy" class="badge bg-danger">
+                {{ slots[day][rowIndex].description }}
+              </span>
+
+              <!-- Show anchor if the slot is not busy -->
+              <a
+                *ngIf="!slots[day][rowIndex].busy"
+                href="#"
+                (click)="onBook($event, day, slots[day][rowIndex].start)"
+                class="btn btn-link"
+              >
+                {{ slots[day][rowIndex].description }}
+              </a>
+            </ng-container>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

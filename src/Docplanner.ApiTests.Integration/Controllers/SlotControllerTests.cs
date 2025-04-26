@@ -80,7 +80,6 @@ namespace Docplanner.ApiTests.Integration.Controllers
 
             Assert.Equal("application/json",
                 response.Content.Headers.ContentType.ToString());
-
         }
     }
 }

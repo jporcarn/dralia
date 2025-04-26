@@ -15,7 +15,7 @@ namespace Docplanner.ApiTests.Unit.Mappings.Profiles
 
         public BookSlotProfileTests()
         {
-            // Initialize AutoMapper with the BookSlotProfile
+            // Initialize AutoMapper with the relevant profiles
             var config = new MapperConfiguration(cfg =>
             {
                 cfg.AddProfile<PatientProfile>();
@@ -31,12 +31,12 @@ namespace Docplanner.ApiTests.Unit.Mappings.Profiles
         [Fact]
         public void BookSlotProfile_ConfigurationIsValid()
         {
-            // Assert            
+            // Assert
             _mapper.ConfigurationProvider.AssertConfigurationIsValid();
         }
 
         [Fact]
-        public void BookSlotProfile_ShouldMapBookSlotRequestToBookSlot()
+        public void BookSlotProfile_Should_Map_BookSlotRequest_To_BookSlot()
         {
             // Arrange
             var bookSlotRequest = _fixture.Create<BookSlotRequest>();

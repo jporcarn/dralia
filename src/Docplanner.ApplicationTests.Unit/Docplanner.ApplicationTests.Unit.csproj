@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Docplanner.Application\Docplanner.Application.csproj" />
+    <ProjectReference Include="..\Docplanner.Test.Utilities\Docplanner.Test.Utilities.csproj" />
   </ItemGroup>
 
 
