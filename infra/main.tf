@@ -49,7 +49,7 @@ resource "azurerm_linux_web_app" "main" {
   tags = merge(local.tags, { version = var.service_version }) # Combine fixed and dynamic tags set from TF_VAR_service_version
 }
 
-# # Angular static site
+# Angular static site
 resource "azurerm_static_web_app" "spa" {
   name                = "dralia-spa"
   resource_group_name = azurerm_resource_group.main.name
