@@ -11,48 +11,10 @@ on:
       - main
 
 jobs:
-  # CI Job: Build and Test
-  ci:
-    runs-on: ubuntu-latest
-    name: Build and Test
-
-    steps:
-      # Checkout the code
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Fetch all tags
-
-      # Setup .NET
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "8.0.x"
-
-      # Restore dependencies
-      - name: Restore dependencies
-        run: dotnet restore ./src/Docplanner.Api.sln
-
-      # Build the project
-      - name: Build
-        run: dotnet build ./src/Docplanner.Api.sln --no-restore --configuration Release
-
-      # Run Unit Tests
-      - name: Run All Unit Tests
-        run: dotnet test ./src/Docplanner.Api.sln --configuration Release --no-build --filter FullyQualifiedName~"*Tests.Unit" --verbosity normal
-
-      # Run Integration Tests
-      - name: Run All Integration Tests
-        run: dotnet test ./src/Docplanner.Api.sln --configuration Release --no-build --filter FullyQualifiedName~"*Tests.Integration" --verbosity normal
-        env:
-          AVAILABILITYAPI__CREDENTIALS__PASSWORD: ${{ secrets.AVAILABILITYAPI__CREDENTIALS__PASSWORD }}
-          AVAILABILITYAPI__CREDENTIALS__USERNAME: ${{ secrets.AVAILABILITYAPI__CREDENTIALS__USERNAME }}
-
   # Tagging Job: Create a new tag
   tag:
     runs-on: ubuntu-latest
     name: Create Tag
-    needs: ci # This job depends on the CI job
 
     steps:
       # Checkout the code
@@ -120,6 +82,12 @@ jobs:
           echo "TF_VAR_credentials_username=${{ secrets.AVAILABILITYAPI__CREDENTIALS__USERNAME }}" >> $GITHUB_ENV
           echo "TF_VAR_credentials_password=${{ secrets.AVAILABILITYAPI__CREDENTIALS__PASSWORD }}" >> $GITHUB_ENV
 
+      - name: Debug TF_VAR_* Environment Variables
+        run: |
+          echo "TF_VAR_service_version=$TF_VAR_service_version"
+          echo "TF_VAR_credentials_username=$TF_VAR_credentials_username"
+          echo "TF_VAR_credentials_password=$TF_VAR_credentials_password"
+
       - name: Export Azure Authentication Environment Variables
         env:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
@@ -132,9 +100,21 @@ jobs:
           echo "ARM_TENANT_ID=${{ secrets.ARM_TENANT_ID }}" >> $GITHUB_ENV
           echo "ARM_SUBSCRIPTION_ID=${{ secrets.ARM_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
 
+      - name: Debug TF_VAR_* Environment Variables
+        run: |
+          echo "TF_VAR_service_version=$TF_VAR_service_version"
+          echo "TF_VAR_credentials_username=$TF_VAR_credentials_username"
+          echo "TF_VAR_credentials_password=$TF_VAR_credentials_password"
+
       - name: Terraform Init
         run: terraform init
         working-directory: ./infra
+
+      - name: Debug TF_VAR_* Environment Variables
+        run: |
+          echo "TF_VAR_service_version=$TF_VAR_service_version"
+          echo "TF_VAR_credentials_username=$TF_VAR_credentials_username"
+          echo "TF_VAR_credentials_password=$TF_VAR_credentials_password"
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
@@ -158,6 +138,27 @@ jobs:
 
       - name: Checkout latest tag
         run: git checkout ${{ needs.tag.outputs.service_version }}
+
+      # Setup .NET
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore dependencies
+        run: dotnet restore ./src/Docplanner.Api.sln
+
+      - name: Build
+        run: dotnet build ./src/Docplanner.Api.sln --no-restore --configuration Release
+
+      - name: Run All Unit Tests
+        run: dotnet test ./src/Docplanner.Api.sln --configuration Release --no-build --filter FullyQualifiedName~"*Tests.Unit" --verbosity normal
+
+      - name: Run All Integration Tests
+        run: dotnet test ./src/Docplanner.Api.sln --configuration Release --no-build --filter FullyQualifiedName~"*Tests.Integration" --verbosity normal
+        env:
+          AVAILABILITYAPI__CREDENTIALS__PASSWORD: ${{ secrets.AVAILABILITYAPI__CREDENTIALS__PASSWORD }}
+          AVAILABILITYAPI__CREDENTIALS__USERNAME: ${{ secrets.AVAILABILITYAPI__CREDENTIALS__USERNAME }}
 
       - name: Publish API
         run: dotnet publish ./src/Docplanner.Api/Docplanner.Api.csproj --configuration Release --output ./publish
