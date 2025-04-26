@@ -62,12 +62,12 @@ namespace Docplanner.Infrastructure.SlotService.Mappings.Resolvers
             var busySlots = dailyAvailabilityDto.BusySlots ?? new List<BusySlotDto>();
 
             // Define the start and end times of the work period
-            var startTime = new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.StartHour, 0, 0, DateTimeKind.Utc);
-            var endTime = new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.EndHour, 0, 0, DateTimeKind.Utc);
+            var startTime = new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.StartHour, 0, 0, DateTimeKind.Local);
+            var endTime = new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.EndHour, 0, 0, DateTimeKind.Local);
 
             // Exclude lunch break
-            var lunchStartTime = new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.LunchStartHour, 0, 0, DateTimeKind.Utc);
-            var lunchEndTime = new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.LunchEndHour, 0, 0, DateTimeKind.Utc);
+            var lunchStartTime = new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.LunchStartHour, 0, 0, DateTimeKind.Local);
+            var lunchEndTime = new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.LunchEndHour, 0, 0, DateTimeKind.Local);
 
             var slots = new List<Slot>();
             var slotDuration = TimeSpan.FromMinutes(slotDurationMinutes);
@@ -87,8 +87,8 @@ namespace Docplanner.Infrastructure.SlotService.Mappings.Resolvers
                 {
                     Busy = isBusy,
                     Empty = isLunchBreak,
-                    End = slotEndTime,
-                    Start = currentTime,
+                    End = slotEndTime.ToUniversalTime(),
+                    Start = currentTime.ToUniversalTime(),
                 });
             }
 
