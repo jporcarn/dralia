@@ -48,9 +48,12 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigins", policy =>
     {
-        policy.WithOrigins("http://localhost:4200") // Allow requests from Angular app
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        policy.WithOrigins(
+            "http://localhost:4200", // Allow requests from Angular app
+            "https://white-pebble-0a6d1d903.6.azurestaticapps.net" // Allow requests from Azure Static Web App
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod();
     });
 });
 
