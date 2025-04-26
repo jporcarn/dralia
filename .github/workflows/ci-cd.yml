@@ -78,7 +78,7 @@ jobs:
 
       - name: Set Terraform Environment Variables
         run: |
-          echo "TF_VAR_service_version=${{ secrets.SERVICE_VERSION }}" >> $GITHUB_ENV
+          echo "TF_VAR_service_version=${{ needs.tag.outputs.service_version }}" >> $GITHUB_ENV
           echo "TF_VAR_credentials_username=${{ secrets.AVAILABILITYAPI__CREDENTIALS__USERNAME }}" >> $GITHUB_ENV
           echo "TF_VAR_credentials_password=${{ secrets.AVAILABILITYAPI__CREDENTIALS__PASSWORD }}" >> $GITHUB_ENV
 
@@ -99,12 +99,6 @@ jobs:
           echo "ARM_CLIENT_SECRET=${{ secrets.ARM_CLIENT_SECRET }}" >> $GITHUB_ENV
           echo "ARM_TENANT_ID=${{ secrets.ARM_TENANT_ID }}" >> $GITHUB_ENV
           echo "ARM_SUBSCRIPTION_ID=${{ secrets.ARM_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
-
-      - name: Debug TF_VAR_* Environment Variables
-        run: |
-          echo "TF_VAR_service_version=$TF_VAR_service_version"
-          echo "TF_VAR_credentials_username=$TF_VAR_credentials_username"
-          echo "TF_VAR_credentials_password=$TF_VAR_credentials_password"
 
       - name: Terraform Init
         run: terraform init
