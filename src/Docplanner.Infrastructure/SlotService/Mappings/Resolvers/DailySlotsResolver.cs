@@ -1,15 +1,23 @@
 ﻿using AutoMapper;
 using Docplanner.Domain.Models;
 using Docplanner.Infrastructure.SlotService.Models;
+using System.IO;
+using System.Runtime.ConstrainedExecution;
 
 namespace Docplanner.Infrastructure.SlotService.Mappings.Resolvers
 {
     /// <summary>
     /// Resolves the daily slots for a given week based on the weekly availability data.
     /// </summary>
-    /// <remarks>The Docplanner.Infrastructure project should only handle simple data transformation to domain models, leaving any business-specific mapping to the application layer.</remarks>
+    /// <remarks>The Docplanner.Infrastructure project should only handle simple data transformation to domain models, leaving any business-specific mapping to the application layer.
+    /// By Design: CET (Central European Time) as Default Time Zone for the Availability API
+    /// Since the third-party availability API does not provide time zone information, I have assumed a default time zone for the data it returns.
+    /// </remarks>
     public class DailySlotsResolver : IValueResolver<WeeklyAvailabilityDto, WeeklySlots, List<DailySlots>>
     {
+        // Define a default time zone (e.g., CET) for interpreting the work periods returned by the availability API.
+        private static readonly TimeZoneInfo DefaultTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Central European Standard Time");
+
         public List<DailySlots> Resolve(WeeklyAvailabilityDto source, WeeklySlots destination, List<DailySlots> destMember, ResolutionContext context)
         {
             List<DailySlots> dailySlotsList = new();
@@ -62,33 +70,33 @@ namespace Docplanner.Infrastructure.SlotService.Mappings.Resolvers
             var busySlots = dailyAvailabilityDto.BusySlots ?? new List<BusySlotDto>();
 
             // Define the start and end times of the work period
-            var startTime = new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.StartHour, 0, 0, DateTimeKind.Local);
-            var endTime = new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.EndHour, 0, 0, DateTimeKind.Local);
+            var startTimeUtc = TimeZoneInfo.ConvertTimeToUtc(new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.StartHour, 0, 0), DefaultTimeZone);
+            var endTimeUtc = TimeZoneInfo.ConvertTimeToUtc(new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.EndHour, 0, 0), DefaultTimeZone);
 
             // Exclude lunch break
-            var lunchStartTime = new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.LunchStartHour, 0, 0, DateTimeKind.Local);
-            var lunchEndTime = new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.LunchEndHour, 0, 0, DateTimeKind.Local);
+            var lunchStartTime = TimeZoneInfo.ConvertTimeToUtc(new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.LunchStartHour, 0, 0), DefaultTimeZone);
+            var lunchEndTime = TimeZoneInfo.ConvertTimeToUtc(new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.LunchEndHour, 0, 0), DefaultTimeZone);
 
             var slots = new List<Slot>();
             var slotDuration = TimeSpan.FromMinutes(slotDurationMinutes);
 
             // Generate slots
-            for (var currentTime = startTime; currentTime < endTime; currentTime += slotDuration)
+            for (var currentTimeUtc = startTimeUtc; currentTimeUtc < endTimeUtc; currentTimeUtc += slotDuration)
             {
-                bool isLunchBreak = currentTime >= lunchStartTime && currentTime < lunchEndTime;
+                bool isLunchBreak = currentTimeUtc >= lunchStartTime && currentTimeUtc < lunchEndTime;
 
-                var slotEndTime = currentTime + slotDuration;
+                var slotEndTimeUtc = currentTimeUtc + slotDuration;
 
                 // Determine if the slot is busy
                 var isBusy = busySlots.Any(busySlot =>
-                    currentTime < busySlot.End && slotEndTime > busySlot.Start);
+                    currentTimeUtc < busySlot.End && slotEndTimeUtc > busySlot.Start);
 
                 slots.Add(new Slot
                 {
                     Busy = isBusy,
                     Empty = isLunchBreak,
-                    End = slotEndTime.ToUniversalTime(),
-                    Start = currentTime.ToUniversalTime(),
+                    End = slotEndTimeUtc,
+                    Start = currentTimeUtc,
                 });
             }
 
