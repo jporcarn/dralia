@@ -4,7 +4,7 @@ using Docplanner.Infrastructure.SlotService.Models;
 using FluentAssertions;
 using Xunit;
 
-namespace Docplanner.InfrastructureTests.Unit.SlotService.Mappings.Resolvers
+namespace Docplanner.InfrastructureTests.Unit.SlotService.Mappings.Resolvers.Tests
 {
     public class DailySlotsResolverTests
     {

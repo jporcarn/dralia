@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net.Http.Json;
 using Xunit;
 
-namespace Docplanner.ApiTests.Integration.Controllers
+namespace Docplanner.ApiTests.Integration.Controllerss.Tests
 {
     public class SlotControllerTests : IClassFixture<WebApplicationFactory<Program>>
     {

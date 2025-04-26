@@ -9,9 +9,9 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
-namespace Docplanner.ApplicationTests.Unit.UseCases.Availability
+namespace Docplanner.ApplicationTests.Unit.UseCases.Availability.Tests
 {
-    public partial class GetAvailableSlotsHandlerTests
+    public class GetAvailableSlotsHandlerTests
     {
         private readonly IFixture _fixture;
 

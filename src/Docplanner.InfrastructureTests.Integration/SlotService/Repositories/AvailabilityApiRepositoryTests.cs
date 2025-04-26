@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-namespace Docplanner.Infrastructure.SlotService.Repositories.Tests.Integration
+namespace Docplanner.InfrastructureTests.Integration.SlotService.Repositories.Tests
 {
     [TestCaseOrderer("PriorityOrderer", "Docplanner.Test.Utilities")]
     public class AvailabilityApiRepositoryTests : IClassFixture<WebApplicationFactory<Program>>
