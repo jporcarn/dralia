@@ -1,3 +1,4 @@
+# General outputs
 output "resource_group_name" {
   description = "The name of the resource group"
   value       = azurerm_resource_group.main.name
@@ -8,6 +9,7 @@ output "service_plan_name" {
   value       = azurerm_service_plan.main.name
 }
 
+# API outputs
 output "web_app_name" {
   description = "The name of the Azure Linux Web App"
   value       = azurerm_linux_web_app.main.name
@@ -31,27 +33,23 @@ output "credentials_username" {
   value = var.credentials_username
 }
 
+# Angular static site outputs
 output "static_site_default_hostname" {
   description = "The default hostname of the Azure Static Web App."
-  value       = azurerm_static_site.spa.default_hostname
-}
-
-output "static_site_custom_domain" {
-  description = "The custom domain associated with the Azure Static Web App (if configured)."
-  value       = azurerm_static_site.spa.custom_domain
+  value       = azurerm_static_web_app.spa.default_host_name
 }
 
 output "static_site_id" {
   description = "The ID of the Azure Static Web App."
-  value       = azurerm_static_site.spa.id
+  value       = azurerm_static_web_app.spa.id
 }
 
 output "static_site_name" {
   description = "The name of the Azure Static Web App."
-  value       = azurerm_static_site.spa.name
+  value       = azurerm_static_web_app.spa.name
 }
 
 output "static_site_location" {
   description = "The location of the Azure Static Web App."
-  value       = azurerm_static_site.spa.location
+  value       = azurerm_static_web_app.spa.location
 }

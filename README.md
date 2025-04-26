@@ -90,13 +90,14 @@ The solution includes comprehensive testing:
 
 ## Deploy to Azure
 
-To deploy the API to Azure, use the provided PowerShell script:
+To deploy the Infrastructure to Azure, use the provided PowerShell script:
 `PS> $securePassword = Read-Host "Enter Password" -AsSecureString`
+`PS> .\deploy-infra.ps1 -Username "techuser" -Password $securePassword`
 
-`PS> .\deploy-api.ps1 -Username "techuser" -Password $securePassword`
+To deploy the API to Azure, use the provided PowerShell script:
+`PS> .\deploy-api.ps1`
 
 To deploy the SPA to Azure, use the provided PowerShell script:
 `PS> .\deploy-angular.ps1 -AzureStaticWebAppsApiToken "your-azure-static-web-apps-api-token"`
-
 AZURE_STATIC_WEB_APPS_API_TOKEN is the official variable name expected by the swa deploy CLI command when you don’t explicitly pass the token via --deployment-token
 AZURE_STATIC_WEB_APPS_API_TOKEN — get it from the Azure Portal
