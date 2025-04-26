@@ -6,12 +6,6 @@ param (
     [SecureString]$Password
 )
 
-
-$solutionPath = "./src/Docplanner.Api.sln"
-$projectPath = "./src/Docplanner.Api/Docplanner.Api.csproj"
-$publishDir = "./publish"
-$resourceGroup = "docplanner-dev-rg"
-$appServiceName = "dralia-api-app"
 $subscriptionName = "Pay as you go"
 $infraDir = "./infra" # Path to the Terraform configuration directory
 
