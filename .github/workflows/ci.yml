@@ -31,3 +31,23 @@ jobs:
         env:
           AVAILABILITYAPI__CREDENTIALS__PASSWORD: ${{ secrets.AVAILABILITYAPI__CREDENTIALS__PASSWORD }}
           AVAILABILITYAPI__CREDENTIALS__USERNAME: ${{ secrets.AVAILABILITYAPI__CREDENTIALS__USERNAME }}
+
+  build-spa:
+    runs-on: ubuntu-latest
+    name: Build Angular SPA
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        working-directory: ./webapp
+        run: npm ci
+
+      - name: Build Angular App
+        working-directory: ./webapp
+        run: npm run build -- --configuration=production

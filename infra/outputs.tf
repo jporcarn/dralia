@@ -30,3 +30,28 @@ output "service_version" {
 output "credentials_username" {
   value = var.credentials_username
 }
+
+output "static_site_default_hostname" {
+  description = "The default hostname of the Azure Static Web App."
+  value       = azurerm_static_site.spa.default_hostname
+}
+
+output "static_site_custom_domain" {
+  description = "The custom domain associated with the Azure Static Web App (if configured)."
+  value       = azurerm_static_site.spa.custom_domain
+}
+
+output "static_site_id" {
+  description = "The ID of the Azure Static Web App."
+  value       = azurerm_static_site.spa.id
+}
+
+output "static_site_name" {
+  description = "The name of the Azure Static Web App."
+  value       = azurerm_static_site.spa.name
+}
+
+output "static_site_location" {
+  description = "The location of the Azure Static Web App."
+  value       = azurerm_static_site.spa.location
+}

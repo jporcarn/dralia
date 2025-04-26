@@ -88,36 +88,31 @@ jobs:
           LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
           echo "service_version=$LATEST_TAG" >> $GITHUB_OUTPUT
 
-  # Deployment Job: Deploy to Azure
-  deploy:
+  # Terraform Job: Deploy Infrastructure
+  deploy-infra:
     runs-on: ubuntu-latest
-    name: Deploy to Azure
-    needs: tag # This job depends on the Tagging job
+    name: Deploy Infrastructure
+    needs: tag
 
     steps:
-      # Checkout the code
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Fetch all tags
 
-      # Checkout the latest tag
       - name: Checkout latest tag
         run: git checkout ${{ needs.tag.outputs.get_latest_tag.service_version }}
 
-      # Install Terraform
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v2
 
-      # Set Terraform environment variables
-      - name: Set Terraform Environment Variable
+      - name: Set Terraform Environment Variables
         run: |
-          echo "TF_VAR_service_version=${{ needs.tag.outputs.get_latest_tag.service_version }}" >> $GITHUB_ENV
+          echo "TF_VAR_service_version=${{ secrets.SERVICE_VERSION }}" >> $GITHUB_ENV
           echo "TF_VAR_credentials_username=${{ secrets.AVAILABILITYAPI__CREDENTIALS__USERNAME }}" >> $GITHUB_ENV
           echo "TF_VAR_credentials_password=${{ secrets.AVAILABILITYAPI__CREDENTIALS__PASSWORD }}" >> $GITHUB_ENV
 
-      # Export Azure authentication environment variables
-      - name: Set Azure Environment Variables
+      - name: Export Azure Authentication Environment Variables
         env:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
@@ -129,38 +124,69 @@ jobs:
           echo "ARM_TENANT_ID=${{ secrets.ARM_TENANT_ID }}" >> $GITHUB_ENV
           echo "ARM_SUBSCRIPTION_ID=${{ secrets.ARM_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
 
-      # Debugging step to check if the environment variables are set correctly
-      - name: Debug Terraform Environment Variables before Terraform Init
-        run: |
-          echo "TF_VAR_service_version=$TF_VAR_service_version"
-          echo "TF_VAR_credentials_username=$TF_VAR_credentials_username"
-          echo "TF_VAR_credentials_password=$TF_VAR_credentials_password"
-
-      # Initialize Terraform
       - name: Terraform Init
         run: terraform init
         working-directory: ./infra
 
-        # Debugging step to check if the environment variables are set correctly
-      - name: Debug Terraform Environment Variables before Terraform Apply
-        run: |
-          echo "TF_VAR_service_version=$TF_VAR_service_version"
-          echo "TF_VAR_credentials_username=$TF_VAR_credentials_username"
-          echo "TF_VAR_credentials_password=$TF_VAR_credentials_password"
-
-      # Apply Terraform
       - name: Terraform Apply
         run: terraform apply -auto-approve
         working-directory: ./infra
 
-      # Publish the project
-      - name: Publish
+  # Deploy API Job
+  deploy-api:
+    runs-on: ubuntu-latest
+    name: Deploy API
+    needs: deploy-infra # Run after the infrastructure deployment
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout latest tag
+        run: git checkout ${{ needs.tag.outputs.get_latest_tag.service_version }}
+
+      - name: Publish API
         run: dotnet publish ./src/Docplanner.Api/Docplanner.Api.csproj --configuration Release --output ./publish
 
-      # Deploy to Azure App Service
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
           app-name: dralia-api-app
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: ./publish
+
+  # Deploy SPA Job
+  deploy-spa:
+    runs-on: ubuntu-latest
+    name: Deploy Angular SPA
+    needs: deploy-infra # Run after the infrastructure deployment
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Checkout latest tag
+        run: git checkout ${{ needs.tag.outputs.get_latest_tag.service_version }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        working-directory: ./webapp
+        run: npm ci
+
+      - name: Build Angular App
+        working-directory: ./webapp
+        run: npm run build -- --configuration=production
+
+      - name: Deploy to Azure Static Web App
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          action: "upload"
+          app_location: "webapp/dist/dralia-webapp"
+          output_location: "" # no additional output folder
