@@ -6,7 +6,7 @@ using Docplanner.Domain.Models;
 using FluentAssertions;
 using Xunit;
 
-namespace Docplanner.ApiTests.Unit.Mappings.Profiles
+namespace Docplanner.ApiTests.Unit.Mappings.Profiless.Tests
 {
     public class BookSlotProfileTests
     {

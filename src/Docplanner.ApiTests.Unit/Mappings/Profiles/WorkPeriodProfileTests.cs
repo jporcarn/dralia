@@ -6,7 +6,7 @@ using Docplanner.Domain.Models;
 using FluentAssertions;
 using Xunit;
 
-namespace Docplanner.Api.Mappings.Profiles.Tests
+namespace Docplanner.ApiTests.Unit.Mappings.Profiless.Tests
 {
     public class WorkPeriodProfileTests
     {

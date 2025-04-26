@@ -2,7 +2,7 @@
 using Docplanner.Infrastructure.SlotService.Mappings.Profiles;
 using Xunit;
 
-namespace Docplanner.InfrastructureTests.Unit.SlotService.Mappings.Profiles
+namespace Docplanner.InfrastructureTests.Unit.SlotService.Mappings.Profiles.Tests
 {
     public class AvailabilityProfileTests
     {
