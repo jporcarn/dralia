@@ -1,8 +1,7 @@
 ﻿using AutoMapper;
 using Docplanner.Domain.Models;
 using Docplanner.Infrastructure.SlotService.Models;
-using System.IO;
-using System.Runtime.ConstrainedExecution;
+using Microsoft.Extensions.Logging;
 
 namespace Docplanner.Infrastructure.SlotService.Mappings.Resolvers
 {
@@ -17,6 +16,13 @@ namespace Docplanner.Infrastructure.SlotService.Mappings.Resolvers
     {
         // Define a default time zone (e.g., CET) for interpreting the work periods returned by the availability API.
         private static readonly TimeZoneInfo DefaultTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Central European Standard Time");
+
+        private readonly ILogger<DailySlotsResolver> _logger;
+
+        public DailySlotsResolver(ILogger<DailySlotsResolver> logger)
+        {
+            _logger = logger;
+        }
 
         public List<DailySlots> Resolve(WeeklyAvailabilityDto source, WeeklySlots destination, List<DailySlots> destMember, ResolutionContext context)
         {
@@ -72,11 +78,17 @@ namespace Docplanner.Infrastructure.SlotService.Mappings.Resolvers
             // Define the start and end times of the work period
 
             // Define the start and end times of the work period in CET
-            DateTime startTimeCET = new(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.StartHour, 0, 0, DateTimeKind.Unspecified);
-            DateTime endTimeCET = new(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.EndHour, 0, 0, DateTimeKind.Unspecified);
+            DateTime startTimeUnspecified = new(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.StartHour, 0, 0, DateTimeKind.Unspecified);
+            _logger.LogInformation($"Unspecified Start Time: {startTimeUnspecified} (assumed CET)");
+            _logger.LogInformation($"Unspecified Start Time: {startTimeUnspecified.ToString("o")} (assumed CET)");
 
-            var startTimeUtc = TimeZoneInfo.ConvertTimeToUtc(startTimeCET, DefaultTimeZone);
-            var endTimeUtc = TimeZoneInfo.ConvertTimeToUtc(endTimeCET, DefaultTimeZone);
+            DateTime endTimeUnspecified = new(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.EndHour, 0, 0, DateTimeKind.Unspecified);
+
+            var startTimeUtc = TimeZoneInfo.ConvertTimeToUtc(startTimeUnspecified, DefaultTimeZone);
+            _logger.LogInformation($"UTC Start Time: {startTimeUtc} (converted to UTC)");
+            _logger.LogInformation($"UTC Start Time: {startTimeUtc.ToString("o")} (converted to UTC)");
+
+            var endTimeUtc = TimeZoneInfo.ConvertTimeToUtc(endTimeUnspecified, DefaultTimeZone);
 
             // Exclude lunch break (convert lunch times to UTC)
             var lunchStartTimeCET = new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.LunchStartHour, 0, 0, DateTimeKind.Unspecified);
