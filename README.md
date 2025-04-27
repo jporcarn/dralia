@@ -148,6 +148,14 @@ During testing, the slot service is mocked to ensure tests are independent of ex
 **By Design**: Assume a Default Time Zone for the Availability API. 
 Since the third-party availability API does not provide time zone information, I assumeed a default time zone for the data it returns. CET (Central European Time).
 
+```plaintext 
+StartHour = 8 (CET)
+EndHour = 16 (CET)
+LunchStartHour = 12 (CET)
+LunchEndHour = 13 (CET)
+SlotDurationMinutes = 30
+```
+
 ---
 
 ## Infrastructure as Code (IaC)

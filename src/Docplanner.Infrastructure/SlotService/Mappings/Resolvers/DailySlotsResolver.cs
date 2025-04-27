@@ -70,12 +70,20 @@ namespace Docplanner.Infrastructure.SlotService.Mappings.Resolvers
             var busySlots = dailyAvailabilityDto.BusySlots ?? new List<BusySlotDto>();
 
             // Define the start and end times of the work period
-            var startTimeUtc = TimeZoneInfo.ConvertTimeToUtc(new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.StartHour, 0, 0), DefaultTimeZone);
-            var endTimeUtc = TimeZoneInfo.ConvertTimeToUtc(new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.EndHour, 0, 0), DefaultTimeZone);
 
-            // Exclude lunch break
-            var lunchStartTime = TimeZoneInfo.ConvertTimeToUtc(new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.LunchStartHour, 0, 0), DefaultTimeZone);
-            var lunchEndTime = TimeZoneInfo.ConvertTimeToUtc(new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.LunchEndHour, 0, 0), DefaultTimeZone);
+            // Define the start and end times of the work period in CET
+            DateTime startTimeCET = new(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.StartHour, 0, 0, DateTimeKind.Unspecified);
+            DateTime endTimeCET = new(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.EndHour, 0, 0, DateTimeKind.Unspecified);
+
+            var startTimeUtc = TimeZoneInfo.ConvertTimeToUtc(startTimeCET, DefaultTimeZone);
+            var endTimeUtc = TimeZoneInfo.ConvertTimeToUtc(endTimeCET, DefaultTimeZone);
+
+            // Exclude lunch break (convert lunch times to UTC)
+            var lunchStartTimeCET = new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.LunchStartHour, 0, 0, DateTimeKind.Unspecified);
+            var lunchEndTimeCET = new DateTime(weekDay.Year, weekDay.Month, weekDay.Day, workPeriod.LunchEndHour, 0, 0, DateTimeKind.Unspecified);
+
+            var lunchStartTimeUtc = TimeZoneInfo.ConvertTimeToUtc(lunchStartTimeCET, DefaultTimeZone);
+            var lunchEndTimeUtc = TimeZoneInfo.ConvertTimeToUtc(lunchEndTimeCET, DefaultTimeZone);
 
             var slots = new List<Slot>();
             var slotDuration = TimeSpan.FromMinutes(slotDurationMinutes);
@@ -83,7 +91,7 @@ namespace Docplanner.Infrastructure.SlotService.Mappings.Resolvers
             // Generate slots
             for (var currentTimeUtc = startTimeUtc; currentTimeUtc < endTimeUtc; currentTimeUtc += slotDuration)
             {
-                bool isLunchBreak = currentTimeUtc >= lunchStartTime && currentTimeUtc < lunchEndTime;
+                bool isLunchBreak = currentTimeUtc >= lunchStartTimeUtc && currentTimeUtc < lunchEndTimeUtc;
 
                 var slotEndTimeUtc = currentTimeUtc + slotDuration;
 
