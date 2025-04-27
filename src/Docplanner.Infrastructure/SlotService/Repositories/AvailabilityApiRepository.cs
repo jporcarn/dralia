@@ -84,6 +84,9 @@ namespace Docplanner.Infrastructure.SlotService.Repositories
 
         public async Task<WeeklySlots> GetWeeklyAvailabilityAsync(DateOnly mondayDate)
         {
+            _logger.LogInformation($"GetWeeklyAvailabilityAsync called with date: {mondayDate}");
+            _logger.LogInformation($"Current Culture: {System.Globalization.CultureInfo.CurrentCulture}");
+
             // Operation path: "GetWeeklyAvailability/{yyyyMMdd}"
 
             // Define the API endpoint
@@ -101,6 +104,8 @@ namespace Docplanner.Infrastructure.SlotService.Repositories
             string operationUrl = urlBuilder.ToString();
 
             var response = await _httpClient.GetFromJsonAsync<WeeklyAvailabilityDto>(operationUrl);
+
+            _logger.LogInformation($"Response from API: {System.Text.Json.JsonSerializer.Serialize(response, new System.Text.Json.JsonSerializerOptions { WriteIndented = true })}");
 
             var domainModel = _mapper.Map<WeeklySlots>(response, opts =>
             {

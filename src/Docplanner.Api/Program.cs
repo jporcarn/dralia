@@ -10,6 +10,12 @@ using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure logging
+builder.Logging.ClearProviders(); // Clear default providers
+builder.Logging.AddConsole(); // Add console logging
+builder.Logging.AddDebug(); // Add debug logging
+builder.Logging.AddAzureWebAppDiagnostics(); // Add Azure App Service diagnostics
+
 // IOptions<> pattern provides a way to access configuration settings in a strongly typed manner.
 // Bind the AvailabilityApi section to AvailabilityApiOptions
 builder.Services.Configure<AvailabilityApiOptions>(builder.Configuration.GetSection("AvailabilityApi"));
