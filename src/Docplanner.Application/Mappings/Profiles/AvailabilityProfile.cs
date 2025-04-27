@@ -1,9 +1,9 @@
 ﻿using AutoMapper;
+using Docplanner.Application.Mappings.Resolvers;
 using Docplanner.Domain.Models;
-using Docplanner.Infrastructure.SlotService.Mappings.Resolvers;
 using Docplanner.Infrastructure.SlotService.Models;
 
-namespace Docplanner.Infrastructure.SlotService.Mappings.Profiles
+namespace Docplanner.Application.Mappings.Profiles
 {
     public class AvailabilityProfile : Profile
     {

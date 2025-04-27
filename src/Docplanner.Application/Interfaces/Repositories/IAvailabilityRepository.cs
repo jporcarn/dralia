@@ -5,7 +5,7 @@ namespace Docplanner.Application.Interfaces.Repositories
 {
     public interface IAvailabilityRepository
     {
-        Task<WeeklySlots> GetWeeklyAvailabilityAsync(DateOnly mondayDate);
+        Task<WeeklyAvailabilityDto?> GetWeeklyAvailabilityAsync(DateOnly mondayDate);
 
         Task TakeSlotAsync(TakeSlotDto takeSlotDto);
     }

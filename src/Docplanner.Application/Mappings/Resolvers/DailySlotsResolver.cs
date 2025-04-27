@@ -3,7 +3,7 @@ using Docplanner.Domain.Models;
 using Docplanner.Infrastructure.SlotService.Models;
 using Microsoft.Extensions.Logging;
 
-namespace Docplanner.Infrastructure.SlotService.Mappings.Resolvers
+namespace Docplanner.Application.Mappings.Resolvers
 {
     /// <summary>
     /// Resolves the daily slots for a given week based on the weekly availability data.

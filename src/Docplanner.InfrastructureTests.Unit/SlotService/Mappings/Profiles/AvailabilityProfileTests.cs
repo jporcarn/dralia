@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using Docplanner.Infrastructure.SlotService.Mappings.Profiles;
+using Docplanner.Application.Mappings.Profiles;
 using Xunit;
 
 namespace Docplanner.InfrastructureTests.Unit.SlotService.Mappings.Profiles.Tests

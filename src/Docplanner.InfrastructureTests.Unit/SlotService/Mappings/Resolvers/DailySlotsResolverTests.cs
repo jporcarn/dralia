@@ -1,7 +1,6 @@
 ﻿using AutoFixture;
-using Docplanner.Application.UseCases.Availability;
+using Docplanner.Application.Mappings.Resolvers;
 using Docplanner.Domain.Models;
-using Docplanner.Infrastructure.SlotService.Mappings.Resolvers;
 using Docplanner.Infrastructure.SlotService.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;

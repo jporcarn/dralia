@@ -1,4 +1,5 @@
-﻿using Docplanner.Application.Interfaces.Repositories;
+﻿using AutoMapper;
+using Docplanner.Application.Interfaces.Repositories;
 using Docplanner.Domain.Models;
 using Docplanner.Infrastructure.SlotService.Models;
 using Microsoft.Extensions.Logging;
@@ -10,13 +11,16 @@ namespace Docplanner.Application.UseCases.Availability
     {
         private readonly IAvailabilityRepository _availabilityRepository;
         private readonly ILogger<BookSlotHandler> _logger;
+        private readonly IMapper _mapper;
 
         public BookSlotHandler(
             IAvailabilityRepository availabilityRepository,
-            ILogger<BookSlotHandler> logger)
+            ILogger<BookSlotHandler> logger,
+            IMapper mapper)
         {
             _availabilityRepository = availabilityRepository;
             _logger = logger;
+            _mapper = mapper;
         }
 
         public async Task BookSlotAsync(BookSlot bookSlot)
@@ -34,7 +38,18 @@ namespace Docplanner.Application.UseCases.Availability
 
             var mondayDateOnly = Utilities.DateUtilities.GetMondayOfGivenYearAndWeek(year, week);
 
-            var availableSlots = await this._availabilityRepository.GetWeeklyAvailabilityAsync(mondayDateOnly);
+            
+            var weeklyAvailabilityDto = await this._availabilityRepository.GetWeeklyAvailabilityAsync(mondayDateOnly);
+
+            var availableSlots = _mapper.Map<WeeklySlots>(weeklyAvailabilityDto, opts =>
+            {
+                opts.Items["mondayDateOnly"] = mondayDateOnly;
+            });
+
+            if (availableSlots == null)
+            {
+                throw new KeyNotFoundException("No slots found for the given year and week.");
+            }
 
             var availableSlot = availableSlots.Days.SelectMany(d => d.Slots)
                 .FirstOrDefault(s => s.Start == bookSlot.Start);

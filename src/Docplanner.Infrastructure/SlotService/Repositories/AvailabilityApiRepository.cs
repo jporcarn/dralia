@@ -14,7 +14,6 @@ namespace Docplanner.Infrastructure.SlotService.Repositories
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger<AvailabilityApiRepository> _logger;
-        private readonly IMapper _mapper;
         private readonly AvailabilityApiOptions _configuration;
 
         public AvailabilityApiRepository(
@@ -25,7 +24,6 @@ namespace Docplanner.Infrastructure.SlotService.Repositories
         {
             _httpClient = httpClient;
             _logger = logger;
-            _mapper = mapper;
             _configuration = options.Value;
 
             if (_httpClient.BaseAddress == null && !String.IsNullOrWhiteSpace(_configuration.BaseUrl))
@@ -82,7 +80,7 @@ namespace Docplanner.Infrastructure.SlotService.Repositories
             }
         }
 
-        public async Task<WeeklySlots> GetWeeklyAvailabilityAsync(DateOnly mondayDate)
+        public async Task<WeeklyAvailabilityDto?> GetWeeklyAvailabilityAsync(DateOnly mondayDate)
         {
             _logger.LogInformation($"GetWeeklyAvailabilityAsync called with date: {mondayDate}");
             _logger.LogInformation($"Current Culture: {System.Globalization.CultureInfo.CurrentCulture}");
@@ -107,12 +105,7 @@ namespace Docplanner.Infrastructure.SlotService.Repositories
 
             _logger.LogInformation($"Response from API: {System.Text.Json.JsonSerializer.Serialize(response, new System.Text.Json.JsonSerializerOptions { WriteIndented = true })}");
 
-            var domainModel = _mapper.Map<WeeklySlots>(response, opts =>
-            {
-                opts.Items["mondayDateOnly"] = mondayDate;
-            });
-
-            return domainModel;
+            return response;
         }
 
         public async Task TakeSlotAsync(TakeSlotDto takeSlotDto)
