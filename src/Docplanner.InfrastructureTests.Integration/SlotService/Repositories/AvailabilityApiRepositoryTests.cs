@@ -27,12 +27,10 @@ namespace Docplanner.InfrastructureTests.Integration.SlotService.Repositories.Te
         public async Task GetWeeklyAvailabilityAsync_Using_DI_Container_Should_Succeed()
         {
             // Arrange
-            var weeklySlots = await _repository.GetWeeklyAvailabilityAsync(new DateOnly(2024, 12, 30));
-
             var mondayDate = new DateOnly(2024, 12, 30); // Monday of the same week as the date in the TakeSlotAsync test
 
             // Act
-            WeeklySlots? result = null;
+            WeeklyAvailabilityDto? result = null;
             try
             {
                 result = await _repository.GetWeeklyAvailabilityAsync(mondayDate);
@@ -46,11 +44,12 @@ namespace Docplanner.InfrastructureTests.Integration.SlotService.Repositories.Te
             Assert.NotNull(result);
 
             result.Facility.Should().NotBeNull();
+
             result.Facility.Should().BeEquivalentTo(new
             {
-                FacilityId = weeklySlots.Facility.FacilityId, // This value changes in the API from time to time
-                Name = weeklySlots.Facility.Name,
-                Address = weeklySlots.Facility.Address,
+                // FacilityId = Guid.Parse("80f09e30-b63b-4aee-8195-5add7ec735f1"), // This value changes in the API from time to time
+                Name = "Las Palmeras",
+                Address = "Plaza de la independencia 36, 38006 Santa Cruz de Tenerife",
             }, (opt) =>
             {
                 opt.ExcludingMissingMembers();
@@ -59,14 +58,32 @@ namespace Docplanner.InfrastructureTests.Integration.SlotService.Repositories.Te
 
             result.SlotDurationMinutes.Should().Be(10);
 
-            result.Days.Should().NotBeNullOrEmpty();
-            result.Days.Should().HaveCount(5);
+            result.Monday.Should().NotBeNull();
+            result.Tuesday.Should().BeNull();
+            result.Wednesday.Should().NotBeNull();
+            result.Thursday.Should().BeNull();
+            result.Friday.Should().NotBeNull();
 
-            var busyDays = result.Days.Where((d) => d.Slots.Count > 0 && d.Slots.Any(s => s.Busy))
-                .ToList();
+            var expectedMonday = new DailyAvailabilityDto
+            {
+                WorkPeriod = new WorkPeriodDto
+                {
+                    StartHour = 9,
+                    EndHour = 17,
+                    LunchStartHour = 13,
+                    LunchEndHour = 14,
+                }
+            };
 
-            busyDays.Should().NotBeNullOrEmpty();
-            busyDays.Should().HaveCount(1);
+            Assert.NotNull(result.Monday);
+
+            result.Monday.WorkPeriod.Should().NotBeNull();
+            result.Monday.WorkPeriod.Should().BeEquivalentTo(expectedMonday.WorkPeriod, (opt) =>
+            {
+                opt.ExcludingMissingMembers();
+                return opt;
+            });
+
         }
 
         [Fact()]

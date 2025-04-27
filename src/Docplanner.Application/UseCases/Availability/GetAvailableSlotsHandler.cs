@@ -1,4 +1,5 @@
-﻿using Docplanner.Application.Interfaces.Repositories;
+﻿using AutoMapper;
+using Docplanner.Application.Interfaces.Repositories;
 using Docplanner.Domain.Models;
 using Microsoft.Extensions.Logging;
 
@@ -13,44 +14,58 @@ namespace Docplanner.Application.UseCases.Availability
     {
         private readonly IAvailabilityRepository _availabilityRepository;
         private readonly ILogger<GetAvailableSlotsHandler> _logger;
+        private readonly IMapper _mapper;
 
         public GetAvailableSlotsHandler(
             IAvailabilityRepository availabilityRepository,
-            ILogger<GetAvailableSlotsHandler> logger
+            ILogger<GetAvailableSlotsHandler> logger,
+            IMapper mapper
             )
         {
-            this._availabilityRepository = availabilityRepository;
-            this._logger = logger;
+            _availabilityRepository = availabilityRepository;
+            _logger = logger;
+            _mapper = mapper;
         }
 
         public async Task<WeeklySlots> GetWeeklySlotsAsync(int year, int week)
         {
             DateOnly mondayDateOnly = Utilities.DateUtilities.GetMondayOfGivenYearAndWeek(year, week);
 
-            var weeklySlots = await this._availabilityRepository.GetWeeklyAvailabilityAsync(mondayDateOnly);
+            var weeklyAvailabilityDto = await this._availabilityRepository.GetWeeklyAvailabilityAsync(mondayDateOnly);
+
+            var weeklySlots = _mapper.Map<WeeklySlots>(weeklyAvailabilityDto, opts =>
+            {
+                opts.Items["mondayDateOnly"] = mondayDateOnly;
+            });
+
             if (weeklySlots == null)
             {
                 throw new KeyNotFoundException("No slots found for the given year and week.");
             }
 
+            // Empty slots are included to fill the gaps in the schedule.
+            var slots = weeklySlots.Days.SelectMany((d) => d.Slots);
 
-            // Get the minimum time of the week
-            var minWeeklySlotTime = weeklySlots.Days.SelectMany((d) => d.Slots)
-                .Select((d) =>
-                {
-                    return new DateTime(mondayDateOnly.Year, mondayDateOnly.Month, mondayDateOnly.Day, d.Start.Hour, d.Start.Minute, d.Start.Second, DateTimeKind.Utc);
-                })
-                .Min();
+            if (slots.Any())
+            {
+                // Get the minimum time of the week
+                var minWeeklySlotTime = slots
+                    .Select((d) =>
+                    {
+                        return new DateTime(mondayDateOnly.Year, mondayDateOnly.Month, mondayDateOnly.Day, d.Start.Hour, d.Start.Minute, d.Start.Second, DateTimeKind.Utc);
+                    })
+                    .Min();
 
-            // Get the minimum time of the week
-            var maxWeeklySlotTime = weeklySlots.Days.SelectMany((d) => d.Slots)
-                .Select((d) =>
-                {
-                    return new DateTime(mondayDateOnly.Year, mondayDateOnly.Month, mondayDateOnly.Day, d.Start.Hour, d.Start.Minute, d.Start.Second, DateTimeKind.Utc);
-                })
-                .Max();
+                // Get the minimum time of the week
+                var maxWeeklySlotTime = weeklySlots.Days.SelectMany((d) => d.Slots)
+                    .Select((d) =>
+                    {
+                        return new DateTime(mondayDateOnly.Year, mondayDateOnly.Month, mondayDateOnly.Day, d.Start.Hour, d.Start.Minute, d.Start.Second, DateTimeKind.Utc);
+                    })
+                    .Max();
 
-            FillGapsWithEmptySlots(weeklySlots, minWeeklySlotTime, maxWeeklySlotTime);
+                FillGapsWithEmptySlots(weeklySlots, minWeeklySlotTime, maxWeeklySlotTime);
+            }
 
             return weeklySlots;
         }
@@ -92,7 +107,7 @@ namespace Docplanner.Application.UseCases.Availability
 
                 for (int i = 0; i < emptySlotsNumber; i++)
                 {
-                    var emptySlotStart = currentDayMaxTime.AddMinutes(i * weeklySlots.SlotDurationMinutes);
+                    var emptySlotStart = currentDayMaxTime.AddMinutes((i + 1) * weeklySlots.SlotDurationMinutes);
 
                     dailySlots.Slots.Add(new Slot
                     {
